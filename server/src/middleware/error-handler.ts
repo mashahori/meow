@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../errors/app-error";
+import { ZodError } from "zod";
 
 export function errorHandler(
   error: unknown,
@@ -13,6 +14,20 @@ export function errorHandler(
         code: error.code,
         message: error.message,
         ...(error.details ? { details: error.details } : {}),
+      },
+    });
+    return;
+  }
+
+  if (error instanceof ZodError) {
+    res.status(400).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Request data is invalid",
+        details: error.issues.map((issue) => ({
+          field: issue.path.join(".") || "body",
+          message: issue.message,
+        })),
       },
     });
     return;
