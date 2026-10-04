@@ -47,3 +47,12 @@ CREATE INDEX IF NOT EXISTS budgets_user_id_idx ON budgets(user_id);
 CREATE INDEX IF NOT EXISTS categories_budget_id_idx ON categories(budget_id);
 CREATE INDEX IF NOT EXISTS expenses_budget_id_idx ON expenses(budget_id);
 CREATE INDEX IF NOT EXISTS expenses_category_id_idx ON expenses(category_id);
+
+CREATE TABLE IF NOT EXISTS "session" (
+  "sid" varchar NOT NULL COLLATE "default",
+  "sess" json NOT NULL,
+  "expire" timestamp(6) NOT NULL,
+  CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");

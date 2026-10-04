@@ -1,41 +1,56 @@
 import bcrypt from "bcryptjs";
-import { pool } from "../../db/pool";
+import { ConflictError, UnauthorizedError } from "../../errors/app-error";
+import {
+  findUserByEmail,
+  findUserById,
+  insertUser,
+  UserRecord,
+} from "../../repositories/user.repository";
 
-export type User = {
+const PASSWORD_SALT_ROUNDS = 12;
+
+export type PublicUser = {
   id: string;
   email: string;
-  password_hash: string;
-  created_at: Date;
-  updated_at: Date;
 };
 
-export async function createUser(
+export async function registerUser(
   email: string,
   password: string,
-): Promise<User> {
-  const passwordHash = await bcrypt.hash(password, 12);
-  const result = await pool.query<User>(
-    `
-      INSERT INTO users (email, password_hash)
-      VALUES ($1, $2)
-      RETURNING id, email, password_hash, created_at, updated_at
-    `,
-    [email, passwordHash],
-  );
+): Promise<PublicUser> {
+  const existingUser = await findUserByEmail(email);
+  if (existingUser) {
+    throw new ConflictError("Email already registered");
+  }
 
-  return result.rows[0];
+  const passwordHash = await bcrypt.hash(password, PASSWORD_SALT_ROUNDS);
+  const user = await insertUser(email, passwordHash);
+
+  return toPublicUser(user);
 }
 
-export async function findUser(email: string): Promise<User | null> {
-  const result = await pool.query<User>(
-    `
-      SELECT id, email, password_hash, created_at, updated_at
-      FROM users
-      WHERE email = $1
-      LIMIT 1
-    `,
-    [email],
-  );
+export async function authenticateUser(
+  email: string,
+  password: string,
+): Promise<PublicUser> {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    throw new UnauthorizedError("Invalid email or password");
+  }
 
-  return result.rows[0] ?? null;
+  const passwordMatches = await bcrypt.compare(password, user.password_hash);
+  if (!passwordMatches) {
+    throw new UnauthorizedError("Invalid email or password");
+  }
+
+  return toPublicUser(user);
+}
+
+export async function getUserById(id: string): Promise<PublicUser | null> {
+  const user = await findUserById(id);
+  return user ? toPublicUser(user) : null;
+}
+
+function toPublicUser(user: UserRecord): PublicUser {
+  return { id: user.id, email: user.email };
 }
