@@ -18,7 +18,11 @@ describe("requestLogger", () => {
     const res = createFinishableResponse(204);
     const next = createNext();
 
-    requestLogger({ method: "GET", path: "/api/auth/me" } as Request, res, next);
+    requestLogger(
+      { method: "GET", originalUrl: "/api/auth/me" } as Request,
+      res,
+      next,
+    );
 
     expect(next).toHaveBeenCalledTimes(1);
     expect(info).not.toHaveBeenCalled();
@@ -44,8 +48,7 @@ describe("requestLogger", () => {
     requestLogger(
       {
         method: "POST",
-        path: "/api/auth/login",
-        url: "/api/auth/login?token=secret",
+        originalUrl: "/api/auth/login?token=secret",
         body: { password: "secret" },
       } as unknown as Request,
       res,
@@ -53,6 +56,27 @@ describe("requestLogger", () => {
     );
     res.emit("finish");
 
+    const entry = JSON.parse(info.mock.calls[0][0] as string);
+    expect(entry.path).toBe("/api/auth/login");
     expect(info.mock.calls[0][0]).not.toContain("secret");
+  });
+
+  it("keeps the full path even if a router rewrites req.url before finish", () => {
+    const info = jest.spyOn(console, "info").mockImplementation(() => undefined);
+    const res = createFinishableResponse(200);
+    const req = {
+      method: "POST",
+      originalUrl: "/api/auth/login",
+      url: "/api/auth/login",
+      path: "/api/auth/login",
+    } as unknown as Request;
+
+    requestLogger(req, res, createNext());
+    Object.assign(req, { url: "/login", path: "/login" });
+    res.emit("finish");
+
+    expect(JSON.parse(info.mock.calls[0][0] as string).path).toBe(
+      "/api/auth/login",
+    );
   });
 });

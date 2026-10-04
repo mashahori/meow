@@ -1,4 +1,4 @@
-# Budget Planner API
+﻿# Budget Planner API
 
 ## Общая информация
 
@@ -163,6 +163,7 @@ Response `200 OK`:
 			"startDate": "2026-06-01",
 			"endDate": "2026-06-30",
 			"status": "active",
+			"isActive": true,
 			"plannedAmount": "66000.00",
 			"spentAmount": "8500.00",
 			"remainingAmount": "57500.00"
@@ -217,6 +218,7 @@ Response `200 OK`:
 	"startDate": "2026-06-01",
 	"endDate": "2026-06-30",
 	"status": "active",
+			"isActive": true,
 	"plannedAmount": "66000.00",
 	"spentAmount": "8500.00",
 	"remainingAmount": "57500.00",
@@ -252,7 +254,27 @@ DELETE /api/budgets/:budgetId
 
 Response: `204 No Content`.
 
+### Активный бюджет
+
+У пользователя может быть один активный бюджет (в списке и деталях бюджета есть поле `isActive`). Первый созданный бюджет становится активным автоматически. Архивированный бюджет не может быть активным; при архивации активного бюджета активный сбрасывается.
+
+```http
+GET /api/budgets/active
+```
+
+Response `200 OK`: `{ "budget": { ... } }` или `{ "budget": null }`.
+
+```http
+PUT /api/budgets/active
+Content-Type: application/json
+```
+
+Request: `{ "budgetId": "budget-uuid" }`
+
+Response `200 OK`: бюджет. Ошибки: `404` если бюджет не найден, `409` если бюджет архивирован.
+
 ## Категории
+
 
 Категория принадлежит только одному бюджету. Категория из одного бюджета не может использоваться в другом.
 
