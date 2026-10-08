@@ -1,6 +1,7 @@
 import express, { Application } from "express";
 import { sessionMiddleware } from "./config/session";
 import { NotFoundError } from "./errors/app-error";
+import { corsMiddleware } from "./middleware/cors";
 import { errorHandler } from "./middleware/error-handler";
 import { requestLogger } from "./middleware/request-logger";
 import authRoutes from "./routes/auth.routes";
@@ -9,6 +10,7 @@ import budgetRoutes from "./routes/budget.routes";
 export const app: Application = express();
 
 app.use(requestLogger);
+app.use(corsMiddleware);
 app.use(express.json());
 app.use(sessionMiddleware);
 
