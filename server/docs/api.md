@@ -26,28 +26,28 @@ Base URL:
 
 ```json
 {
-	"error": {
-		"code": "VALIDATION_ERROR",
-		"message": "Request data is invalid",
-		"details": [
-			{
-				"field": "email",
-				"message": "Invalid email"
-			}
-		]
-	}
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request data is invalid",
+    "details": [
+      {
+        "field": "email",
+        "message": "Invalid email"
+      }
+    ]
+  }
 }
 ```
 
 Используемые HTTP-статусы:
 
-| Статус | Значение |
-|---|---|
-| `400` | Некорректные данные запроса |
-| `401` | Пользователь не авторизован |
-| `404` | Ресурс не найден или недоступен пользователю |
-| `409` | Конфликт данных |
-| `500` | Внутренняя ошибка сервера |
+| Статус | Значение                                     |
+| ------ | -------------------------------------------- |
+| `400`  | Некорректные данные запроса                  |
+| `401`  | Пользователь не авторизован                  |
+| `404`  | Ресурс не найден или недоступен пользователю |
+| `409`  | Конфликт данных                              |
+| `500`  | Внутренняя ошибка сервера                    |
 
 ## Авторизация
 
@@ -62,8 +62,8 @@ Request:
 
 ```json
 {
-	"email": "maria@example.com",
-	"password": "strong-password"
+  "email": "maria@example.com",
+  "password": "strong-password"
 }
 ```
 
@@ -71,10 +71,10 @@ Response `201 Created`:
 
 ```json
 {
-	"user": {
-		"id": "3f2504e0-e89b-41d4-a716-446655440000",
-		"email": "maria@example.com"
-	}
+  "user": {
+    "id": "3f2504e0-e89b-41d4-a716-446655440000",
+    "email": "maria@example.com"
+  }
 }
 ```
 
@@ -91,8 +91,8 @@ Request:
 
 ```json
 {
-	"email": "maria@example.com",
-	"password": "strong-password"
+  "email": "maria@example.com",
+  "password": "strong-password"
 }
 ```
 
@@ -100,10 +100,10 @@ Response `200 OK`:
 
 ```json
 {
-	"user": {
-		"id": "3f2504e0-e89b-41d4-a716-446655440000",
-		"email": "maria@example.com"
-	}
+  "user": {
+    "id": "3f2504e0-e89b-41d4-a716-446655440000",
+    "email": "maria@example.com"
+  }
 }
 ```
 
@@ -123,10 +123,10 @@ Response `200 OK`:
 
 ```json
 {
-	"user": {
-		"id": "3f2504e0-e89b-41d4-a716-446655440000",
-		"email": "maria@example.com"
-	}
+  "user": {
+    "id": "3f2504e0-e89b-41d4-a716-446655440000",
+    "email": "maria@example.com"
+  }
 }
 ```
 
@@ -156,19 +156,21 @@ Response `200 OK`:
 
 ```json
 {
-	"items": [
-		{
-			"id": "budget-uuid",
-			"name": "Июнь 2026",
-			"startDate": "2026-06-01",
-			"endDate": "2026-06-30",
-			"status": "active",
-			"isActive": true,
-			"plannedAmount": "66000.00",
-			"spentAmount": "8500.00",
-			"remainingAmount": "57500.00"
-		}
-	]
+  "items": [
+    {
+      "id": "budget-uuid",
+      "name": "Июнь 2026",
+      "startDate": "2026-06-01",
+      "endDate": "2026-06-30",
+      "status": "active",
+      "isActive": true,
+      "initialAmount": "100000.00",
+      "currency": "RUB",
+      "plannedAmount": "66000.00",
+      "spentAmount": "8500.00",
+      "remainingAmount": "57500.00"
+    }
+  ]
 }
 ```
 
@@ -183,9 +185,11 @@ Request:
 
 ```json
 {
-	"name": "Июнь 2026",
-	"startDate": "2026-06-01",
-	"endDate": "2026-06-30"
+  "name": "Июнь 2026",
+  "startDate": "2026-06-01",
+  "endDate": "2026-06-30",
+  "initialAmount": 100000,
+  "currency": "RUB"
 }
 ```
 
@@ -193,11 +197,13 @@ Response `201 Created`:
 
 ```json
 {
-	"id": "budget-uuid",
-	"name": "Июнь 2026",
-	"startDate": "2026-06-01",
-	"endDate": "2026-06-30",
-	"status": "active"
+  "id": "budget-uuid",
+  "name": "Июнь 2026",
+  "startDate": "2026-06-01",
+  "endDate": "2026-06-30",
+  "status": "active",
+  "initialAmount": "100000.00",
+  "currency": "RUB"
 }
 ```
 
@@ -213,16 +219,18 @@ Response `200 OK`:
 
 ```json
 {
-	"id": "budget-uuid",
-	"name": "Июнь 2026",
-	"startDate": "2026-06-01",
-	"endDate": "2026-06-30",
-	"status": "active",
-			"isActive": true,
-	"plannedAmount": "66000.00",
-	"spentAmount": "8500.00",
-	"remainingAmount": "57500.00",
-	"categories": []
+  "id": "budget-uuid",
+  "name": "Июнь 2026",
+  "startDate": "2026-06-01",
+  "endDate": "2026-06-30",
+  "status": "active",
+  "isActive": true,
+  "initialAmount": "100000.00",
+  "currency": "RUB",
+  "plannedAmount": "66000.00",
+  "spentAmount": "8500.00",
+  "remainingAmount": "57500.00",
+  "categories": []
 }
 ```
 
@@ -237,8 +245,10 @@ Request:
 
 ```json
 {
-	"name": "Июнь 2026 - обновленный",
-	"endDate": "2026-07-01"
+  "name": "Июнь 2026 - обновленный",
+  "endDate": "2026-07-01",
+  "initialAmount": 120000,
+  "currency": "RUB"
 }
 ```
 
@@ -275,7 +285,6 @@ Response `200 OK`: бюджет. Ошибки: `404` если бюджет не 
 
 ## Категории
 
-
 Категория принадлежит только одному бюджету. Категория из одного бюджета не может использоваться в другом.
 
 ### Получить категории бюджета
@@ -288,16 +297,16 @@ Response `200 OK`:
 
 ```json
 {
-	"items": [
-		{
-			"id": "category-uuid",
-			"budgetId": "budget-uuid",
-			"name": "Продукты",
-			"plannedAmount": "26000.00",
-			"spentAmount": "8500.00",
-			"remainingAmount": "17500.00"
-		}
-	]
+  "items": [
+    {
+      "id": "category-uuid",
+      "budgetId": "budget-uuid",
+      "name": "Продукты",
+      "plannedAmount": "26000.00",
+      "spentAmount": "8500.00",
+      "remainingAmount": "17500.00"
+    }
+  ]
 }
 ```
 
@@ -312,8 +321,8 @@ Request:
 
 ```json
 {
-	"name": "Продукты",
-	"plannedAmount": "26000.00"
+  "name": "Продукты",
+  "plannedAmount": "26000.00"
 }
 ```
 
@@ -332,8 +341,8 @@ Request:
 
 ```json
 {
-	"name": "Продукты и бытовые товары",
-	"plannedAmount": "28000.00"
+  "name": "Продукты и бытовые товары",
+  "plannedAmount": "28000.00"
 }
 ```
 
@@ -361,16 +370,16 @@ Response `200 OK`:
 
 ```json
 {
-	"items": [
-		{
-			"id": "expense-uuid",
-			"budgetId": "budget-uuid",
-			"categoryId": "category-uuid",
-			"amount": "8500.00",
-			"spentAt": "2026-06-15",
-			"note": "Покупки на неделю"
-		}
-	]
+  "items": [
+    {
+      "id": "expense-uuid",
+      "budgetId": "budget-uuid",
+      "categoryId": "category-uuid",
+      "amount": "8500.00",
+      "spentAt": "2026-06-15",
+      "note": "Покупки на неделю"
+    }
+  ]
 }
 ```
 
@@ -385,10 +394,10 @@ Request:
 
 ```json
 {
-	"categoryId": "category-uuid",
-	"amount": "8500.00",
-	"spentAt": "2026-06-15",
-	"note": "Покупки на неделю"
+  "categoryId": "category-uuid",
+  "amount": "8500.00",
+  "spentAt": "2026-06-15",
+  "note": "Покупки на неделю"
 }
 ```
 
@@ -407,8 +416,8 @@ Request:
 
 ```json
 {
-	"amount": "9000.00",
-	"note": "Обновленная сумма"
+  "amount": "9000.00",
+  "note": "Обновленная сумма"
 }
 ```
 

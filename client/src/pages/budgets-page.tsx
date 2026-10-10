@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, WalletCards } from 'lucide-react'
-import { Spinner } from '../components/ui/spinner'
+import { useQuery } from '@tanstack/react-query';
+import { CalendarDays, WalletCards } from 'lucide-react';
+import { CreateBudgetDialog } from '../components/create-budget-dialog';
+import { Spinner } from '../components/ui/spinner';
 import {
   Table,
   TableBody,
@@ -8,43 +9,46 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../components/ui/table'
-import { getBudgets } from '../lib/budget-api'
-import { cn } from '../lib/utils'
+} from '../components/ui/table';
+import { getBudgets } from '../lib/budget-api';
+import { cn } from '../lib/utils';
 
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
   day: '2-digit',
   month: 'long',
   year: 'numeric',
-})
+});
 
 function formatDate(date: string) {
-  return dateFormatter.format(new Date(`${date}T00:00:00`))
+  return dateFormatter.format(new Date(`${date}T00:00:00`));
 }
 
 export function BudgetsPage() {
   const budgetsQuery = useQuery({
     queryKey: ['budgets'],
     queryFn: getBudgets,
-  })
+  });
 
   return (
     <section className="mx-auto max-w-5xl">
-      <div className="flex items-start gap-4">
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#eee8fb] text-[#6d43e5]">
-          <WalletCards size={21} />
-        </span>
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#8a7aa9]">
-            Planning
-          </p>
-          <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#241c3b]">
-            Budgets
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-[#888198]">
-            All your budgeting periods in one place.
-          </p>
+      <div className="flex flex-wrap items-start justify-between gap-5">
+        <div className="flex items-start gap-4">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#eee8fb] text-[#6d43e5]">
+            <WalletCards size={21} />
+          </span>
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#8a7aa9]">
+              Planning
+            </p>
+            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#241c3b]">
+              Budgets
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-[#888198]">
+              All your budgeting periods in one place.
+            </p>
+          </div>
         </div>
+        <CreateBudgetDialog />
       </div>
 
       <div className="mt-8 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
@@ -88,9 +92,7 @@ export function BudgetsPage() {
               {budgetsQuery.data.map((budget) => (
                 <TableRow
                   key={budget.id}
-                  className={cn(
-                    budget.isActive && 'bg-violet-50 hover:bg-violet-100/70',
-                  )}
+                  className={cn(budget.isActive && 'bg-violet-50 hover:bg-violet-100/70')}
                 >
                   <TableCell className="font-semibold text-foreground">
                     <span className="flex items-center gap-3">
@@ -111,5 +113,5 @@ export function BudgetsPage() {
         ) : null}
       </div>
     </section>
-  )
+  );
 }

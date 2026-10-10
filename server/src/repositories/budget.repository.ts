@@ -1,11 +1,13 @@
-import { pool } from "../db/pool";
+import { pool } from '../db/pool';
 
 export type BudgetRow = {
   id: string;
   name: string;
   startDate: string;
   endDate: string;
-  status: "active" | "archived";
+  status: 'active' | 'archived';
+  initialAmount: string;
+  currency: string;
   plannedAmount: string;
   spentAmount: string;
   remainingAmount: string;
@@ -27,6 +29,8 @@ const BUDGET_SELECT = `
     to_char(b.start_date, 'YYYY-MM-DD') AS "startDate",
     to_char(b.end_date, 'YYYY-MM-DD') AS "endDate",
     b.status,
+    b.initial_amount::text AS "initialAmount",
+    b.currency,
     COALESCE((SELECT SUM(c.planned_amount) FROM categories c WHERE c.budget_id = b.id), 0)::numeric(12,2)::text AS "plannedAmount",
     COALESCE((SELECT SUM(e.amount) FROM expenses e WHERE e.budget_id = b.id), 0)::numeric(12,2)::text AS "spentAmount",
     (
@@ -38,14 +42,11 @@ const BUDGET_SELECT = `
   JOIN users u ON u.id = b.user_id
 `;
 
-export async function isBudgetOwnedByUser(
-  budgetId: string,
-  userId: string,
-): Promise<boolean> {
-  const result = await pool.query(
-    "SELECT 1 FROM budgets WHERE id = $1 AND user_id = $2 LIMIT 1",
-    [budgetId, userId],
-  );
+export async function isBudgetOwnedByUser(budgetId: string, userId: string): Promise<boolean> {
+  const result = await pool.query('SELECT 1 FROM budgets WHERE id = $1 AND user_id = $2 LIMIT 1', [
+    budgetId,
+    userId,
+  ]);
 
   return result.rows.length > 0;
 }
@@ -58,20 +59,15 @@ export async function listBudgets(userId: string): Promise<BudgetRow[]> {
   return result.rows;
 }
 
-export async function findBudget(
-  budgetId: string,
-  userId: string,
-): Promise<BudgetRow | null> {
-  const result = await pool.query(
-    `${BUDGET_SELECT} WHERE b.id = $1 AND b.user_id = $2`,
-    [budgetId, userId],
-  );
+export async function findBudget(budgetId: string, userId: string): Promise<BudgetRow | null> {
+  const result = await pool.query(`${BUDGET_SELECT} WHERE b.id = $1 AND b.user_id = $2`, [
+    budgetId,
+    userId,
+  ]);
   return result.rows[0] ?? null;
 }
 
-export async function findActiveBudget(
-  userId: string,
-): Promise<BudgetRow | null> {
+export async function findActiveBudget(userId: string): Promise<BudgetRow | null> {
   const result = await pool.query(
     `${BUDGET_SELECT} WHERE b.user_id = $1 AND b.id = u.active_budget_id AND b.status = 'active'`,
     [userId],
@@ -79,9 +75,7 @@ export async function findActiveBudget(
   return result.rows[0] ?? null;
 }
 
-export async function listBudgetCategories(
-  budgetId: string,
-): Promise<CategorySummaryRow[]> {
+export async function listBudgetCategories(budgetId: string): Promise<CategorySummaryRow[]> {
   const result = await pool.query(
     `SELECT
        c.id,
@@ -100,12 +94,19 @@ export async function listBudgetCategories(
 
 export async function insertBudget(
   userId: string,
-  data: { name: string; startDate: string; endDate: string },
+  data: {
+    name: string;
+    startDate: string;
+    endDate: string;
+    initialAmount: number;
+    currency: string;
+  },
 ): Promise<string> {
   const result = await pool.query(
-    `INSERT INTO budgets (user_id, name, start_date, end_date)
-     VALUES ($1, $2, $3, $4) RETURNING id`,
-    [userId, data.name, data.startDate, data.endDate],
+    `INSERT INTO budgets
+       (user_id, name, start_date, end_date, initial_amount, currency)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [userId, data.name, data.startDate, data.endDate, data.initialAmount, data.currency],
   );
   return result.rows[0].id;
 }
@@ -114,13 +115,21 @@ export async function insertBudget(
 export async function updateBudget(
   budgetId: string,
   userId: string,
-  data: { name?: string; startDate?: string; endDate?: string },
+  data: {
+    name?: string;
+    startDate?: string;
+    endDate?: string;
+    initialAmount?: number;
+    currency?: string;
+  },
 ): Promise<boolean> {
   const result = await pool.query(
     `UPDATE budgets SET
        name = COALESCE($3, name),
        start_date = COALESCE($4::date, start_date),
        end_date = COALESCE($5::date, end_date),
+       initial_amount = COALESCE($6, initial_amount),
+       currency = COALESCE($7, currency),
        updated_at = now()
      WHERE id = $1 AND user_id = $2
        AND COALESCE($5::date, end_date) >= COALESCE($4::date, start_date)`,
@@ -130,42 +139,32 @@ export async function updateBudget(
       data.name ?? null,
       data.startDate ?? null,
       data.endDate ?? null,
+      data.initialAmount ?? null,
+      data.currency ?? null,
     ],
   );
   return (result.rowCount ?? 0) > 0;
 }
 
-export async function archiveBudget(
-  budgetId: string,
-  userId: string,
-): Promise<void> {
+export async function archiveBudget(budgetId: string, userId: string): Promise<void> {
   await pool.query(
     "UPDATE budgets SET status = 'archived', updated_at = now() WHERE id = $1 AND user_id = $2",
     [budgetId, userId],
   );
   await pool.query(
-    "UPDATE users SET active_budget_id = NULL WHERE id = $1 AND active_budget_id = $2",
+    'UPDATE users SET active_budget_id = NULL WHERE id = $1 AND active_budget_id = $2',
     [userId, budgetId],
   );
 }
 
-export async function setActiveBudget(
-  userId: string,
-  budgetId: string | null,
-): Promise<void> {
-  await pool.query("UPDATE users SET active_budget_id = $2 WHERE id = $1", [
-    userId,
-    budgetId,
-  ]);
+export async function setActiveBudget(userId: string, budgetId: string | null): Promise<void> {
+  await pool.query('UPDATE users SET active_budget_id = $2 WHERE id = $1', [userId, budgetId]);
 }
 
-export async function getBudgetStatus(
-  budgetId: string,
-  userId: string,
-): Promise<string | null> {
-  const result = await pool.query(
-    "SELECT status FROM budgets WHERE id = $1 AND user_id = $2",
-    [budgetId, userId],
-  );
+export async function getBudgetStatus(budgetId: string, userId: string): Promise<string | null> {
+  const result = await pool.query('SELECT status FROM budgets WHERE id = $1 AND user_id = $2', [
+    budgetId,
+    userId,
+  ]);
   return result.rows[0]?.status ?? null;
 }
