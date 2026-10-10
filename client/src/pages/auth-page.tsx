@@ -55,7 +55,7 @@ export function AuthPage({ mode }: AuthPageProps) {
     setSubmitError(null)
     try {
       await signIn(credentials)
-      navigate('/dashboard')
+      navigate('/budgets')
     } catch (error) {
       setSubmitError(getErrorMessage(error))
     }
@@ -64,7 +64,7 @@ export function AuthPage({ mode }: AuthPageProps) {
     setSubmitError(null)
     try {
       await signUp({ email, password })
-      navigate('/dashboard')
+      navigate('/budgets')
     } catch (error) {
       setSubmitError(getErrorMessage(error))
     }

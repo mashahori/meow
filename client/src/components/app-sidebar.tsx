@@ -17,7 +17,7 @@ import {
 } from './ui/sidebar'
 
 const navigation = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  // { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Budgets', url: '/budgets', icon: WalletCards },
 ]
 

@@ -40,7 +40,7 @@ function App() {
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/register" element={<AuthPage mode="register" />} />
             <Route element={<ProtectedLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
+              {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
               <Route path="/budgets" element={<BudgetsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/login" replace />} />
