@@ -1,4 +1,4 @@
-import { LayoutDashboard, Layers3, LogOut, WalletCards } from 'lucide-react'
+import { Layers3, LogOut, WalletCards } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/use-auth'
@@ -59,7 +59,7 @@ export function AppSidebar() {
               {navigation.map(({ title, url, icon: Icon }) => (
                 <SidebarMenuItem key={url}>
                   <SidebarMenuButton
-                    isActive={location.pathname === url}
+                    isActive={location.pathname === url || location.pathname.startsWith(`${url}/`)}
                     render={<NavLink to={url} />}
                     tooltip={title}
                     onClick={() => {

@@ -6,7 +6,7 @@ import { AppLayout } from './components/app-layout'
 import { Spinner } from './components/ui/spinner'
 import { AuthPage } from './pages/auth-page'
 import { BudgetsPage } from './pages/budgets-page'
-import { DashboardPage } from './pages/dashboard-page'
+import { BudgetDetailsPage } from './pages/budget-details-page'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +42,7 @@ function App() {
             <Route element={<ProtectedLayout />}>
               {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
               <Route path="/budgets" element={<BudgetsPage />} />
+              <Route path="/budgets/:budgetId" element={<BudgetDetailsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>

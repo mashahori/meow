@@ -1,15 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, CalendarDays, Coins, WalletCards } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import type { Budget } from '../lib/budget-api';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Field } from './ui/field';
 import { Input } from './ui/input';
 import { Spinner } from './ui/spinner';
-import { createBudget } from '../lib/budget-api';
+import { createBudget, updateBudget } from '../lib/budget-api';
 
 const budgetFormSchema = z
   .object({
@@ -40,39 +41,67 @@ function getDefaultDates() {
   return { startDate: toDateInput(startDate), endDate: toDateInput(endDate) };
 }
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unable to create budget.';
+function getErrorMessage(error: unknown, action: 'create' | 'update') {
+  return error instanceof Error
+    ? error.message
+    : `Unable to ${action} budget.`;
 }
 
-export function CreateBudgetDialog() {
+type BudgetFormDialogProps = {
+  budget?: Budget;
+  renderTrigger?: (open: () => void) => ReactNode;
+};
+
+export function BudgetFormDialog({ budget, renderTrigger }: BudgetFormDialogProps) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
-      name: '',
-      ...getDefaultDates(),
-      initialAmount: 0,
-      currency: 'RUB',
+      name: budget?.name ?? '',
+      startDate: budget?.startDate ?? getDefaultDates().startDate,
+      endDate: budget?.endDate ?? getDefaultDates().endDate,
+      initialAmount: budget ? Number(budget.initialAmount) : 0,
+      currency: budget?.currency ?? 'RUB',
     },
   });
   const mutation = useMutation({
-    mutationFn: createBudget,
+    mutationFn: (values: BudgetFormValues) =>
+      budget ? updateBudget(budget.id, values) : createBudget(values),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      if (budget) {
+        await queryClient.invalidateQueries({ queryKey: ['budget', budget.id] });
+      }
       setOpen(false);
-      form.reset({ name: '', ...getDefaultDates(), initialAmount: 0, currency: 'RUB' });
+      form.reset();
     },
   });
 
   const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
+  const openDialog = () => {
+    form.reset({
+      name: budget?.name ?? '',
+      startDate: budget?.startDate ?? getDefaultDates().startDate,
+      endDate: budget?.endDate ?? getDefaultDates().endDate,
+      initialAmount: budget ? Number(budget.initialAmount) : 0,
+      currency: budget?.currency ?? 'RUB',
+    });
+    mutation.reset();
+    setOpen(true);
+  };
+  const action = budget ? 'update' : 'create';
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        <WalletCards />
-        Create budget
-      </Button>
+      {renderTrigger ? (
+        renderTrigger(openDialog)
+      ) : (
+        <Button onClick={openDialog}>
+          <WalletCards />
+          Create budget
+        </Button>
+      )}
       <Dialog
         open={open}
         onOpenChange={(nextOpen) => {
@@ -85,9 +114,11 @@ export function CreateBudgetDialog() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create a budget</DialogTitle>
+            <DialogTitle>{budget ? 'Edit budget' : 'Create a budget'}</DialogTitle>
             <DialogDescription>
-              Set a name, period and starting amount for your budget.
+              {budget
+                ? 'Update the name, period or starting amount for your budget.'
+                : 'Set a name, period and starting amount for your budget.'}
             </DialogDescription>
           </DialogHeader>
           <form className="space-y-5" onSubmit={onSubmit} noValidate>
@@ -175,7 +206,7 @@ export function CreateBudgetDialog() {
 
             {mutation.isError ? (
               <p role="alert" className="text-sm font-medium text-destructive">
-                {getErrorMessage(mutation.error)}
+                {getErrorMessage(mutation.error, action)}
               </p>
             ) : null}
 
@@ -200,7 +231,7 @@ export function CreateBudgetDialog() {
                   </>
                 ) : (
                   <>
-                    Create budget
+                    {budget ? 'Save changes' : 'Create budget'}
                     <ArrowRight />
                   </>
                 )}
@@ -211,4 +242,8 @@ export function CreateBudgetDialog() {
       </Dialog>
     </>
   );
+}
+
+export function CreateBudgetDialog() {
+  return <BudgetFormDialog />;
 }
