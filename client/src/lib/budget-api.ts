@@ -22,6 +22,11 @@ const budgetCategorySchema = z.object({
   spentAmount: z.string(),
 });
 
+const categorySchema = budgetCategorySchema.extend({
+  budgetId: z.string().uuid(),
+  remainingAmount: z.string(),
+});
+
 const budgetDetailsSchema = budgetSchema.extend({
   categories: z.array(budgetCategorySchema),
 });
@@ -36,6 +41,12 @@ const apiErrorSchema = z.object({
 
 export type Budget = z.infer<typeof budgetSchema>;
 export type BudgetDetails = z.infer<typeof budgetDetailsSchema>;
+export type BudgetCategory = z.infer<typeof budgetCategorySchema>;
+export type Category = z.infer<typeof categorySchema>;
+export type CategoryPayload = {
+  name: string;
+  plannedAmount: string;
+};
 export type CreateBudgetPayload = {
   name: string;
   startDate: string;
@@ -197,6 +208,104 @@ export async function deleteBudget(budgetId: string): Promise<void> {
       parsedError.success
         ? parsedError.data.error.message
         : `Unable to delete budget (${response.status}).`,
+      response.status,
+      parsedError.success ? parsedError.data.error.code : undefined,
+    );
+  }
+}
+
+export async function createCategory(
+  budgetId: string,
+  payload: CategoryPayload,
+): Promise<Category> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}/api/budgets/${budgetId}/categories`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    const payload: unknown = await response.json();
+    const parsedError = apiErrorSchema.safeParse(payload);
+    throw new ApiError(
+      parsedError.success
+        ? parsedError.data.error.message
+        : `Unable to create category (${response.status}).`,
+      response.status,
+      parsedError.success ? parsedError.data.error.code : undefined,
+    );
+  }
+
+  return categorySchema.parse(await response.json());
+}
+
+export async function updateCategory(
+  categoryId: string,
+  payload: CategoryPayload,
+): Promise<Category> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}/api/categories/${categoryId}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    const payload: unknown = await response.json();
+    const parsedError = apiErrorSchema.safeParse(payload);
+    throw new ApiError(
+      parsedError.success
+        ? parsedError.data.error.message
+        : `Unable to update category (${response.status}).`,
+      response.status,
+      parsedError.success ? parsedError.data.error.code : undefined,
+    );
+  }
+
+  return categorySchema.parse(await response.json());
+}
+
+export async function deleteCategory(categoryId: string): Promise<void> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}/api/categories/${categoryId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
+    }
+    throw error;
+  }
+
+  if (!response.ok) {
+    const payload: unknown = await response.json();
+    const parsedError = apiErrorSchema.safeParse(payload);
+    throw new ApiError(
+      parsedError.success
+        ? parsedError.data.error.message
+        : `Unable to delete category (${response.status}).`,
       response.status,
       parsedError.success ? parsedError.data.error.code : undefined,
     );

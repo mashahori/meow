@@ -49,11 +49,23 @@ function getErrorMessage(error: unknown, action: 'create' | 'update') {
 
 type BudgetFormDialogProps = {
   budget?: Budget;
-  renderTrigger?: (open: () => void) => ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  renderTrigger?: (open: () => void) => ReactNode | null;
 };
 
-export function BudgetFormDialog({ budget, renderTrigger }: BudgetFormDialogProps) {
-  const [open, setOpen] = useState(false);
+export function BudgetFormDialog({
+  budget,
+  open,
+  onOpenChange,
+  renderTrigger,
+}: BudgetFormDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = open ?? internalOpen;
+  const setOpen = (nextOpen: boolean) => {
+    setInternalOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
   const queryClient = useQueryClient();
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -94,7 +106,7 @@ export function BudgetFormDialog({ budget, renderTrigger }: BudgetFormDialogProp
 
   return (
     <>
-      {renderTrigger ? (
+      {renderTrigger !== undefined ? (
         renderTrigger(openDialog)
       ) : (
         <Button onClick={openDialog}>
@@ -103,7 +115,7 @@ export function BudgetFormDialog({ budget, renderTrigger }: BudgetFormDialogProp
         </Button>
       )}
       <Dialog
-        open={open}
+        open={isOpen}
         onOpenChange={(nextOpen) => {
           setOpen(nextOpen);
           if (!nextOpen) {

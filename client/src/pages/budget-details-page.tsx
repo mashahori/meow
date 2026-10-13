@@ -1,8 +1,26 @@
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, CalendarDays, CircleDollarSign, WalletCards } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  ArrowLeft,
+  CalendarDays,
+  CircleDollarSign,
+  Pencil,
+  Plus,
+  Trash2,
+  WalletCards,
+} from 'lucide-react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { CategoryFormDialog } from '../components/category-form-dialog';
+import { Button } from '../components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
-import { getBudgetDetails } from '../lib/budget-api';
+import { deleteCategory, getBudgetDetails, type BudgetCategory } from '../lib/budget-api';
 
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
   day: '2-digit',
@@ -24,6 +42,10 @@ function formatMoney(amount: string | number, currency: string) {
 
 export function BudgetDetailsPage() {
   const { budgetId } = useParams();
+  const [categoryFormOpen, setCategoryFormOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<BudgetCategory>();
+  const [deletingCategory, setDeletingCategory] = useState<BudgetCategory>();
+  const queryClient = useQueryClient();
   const budgetQuery = useQuery({
     queryKey: ['budget', budgetId],
     queryFn: () => {
@@ -31,6 +53,18 @@ export function BudgetDetailsPage() {
       return getBudgetDetails(budgetId);
     },
     enabled: Boolean(budgetId),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: () => {
+      if (!deletingCategory) throw new Error('Category not found.');
+      return deleteCategory(deletingCategory.id);
+    },
+    onSuccess: async () => {
+      if (budgetId) {
+        await queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
+      }
+      setDeletingCategory(undefined);
+    },
   });
 
   if (budgetQuery.isPending && budgetId) {
@@ -103,7 +137,11 @@ export function BudgetDetailsPage() {
                     : 'bg-muted text-muted-foreground'
                 }`}
               >
-                {budget.isActive ? 'Active' : budget.status === 'archived' ? 'Archived' : 'Inactive'}
+                {budget.isActive
+                  ? 'Active'
+                  : budget.status === 'archived'
+                    ? 'Archived'
+                    : 'Inactive'}
               </span>
             </div>
           </div>
@@ -173,6 +211,15 @@ export function BudgetDetailsPage() {
             {budget.categories.length}
           </span>
         </div>
+        <Button
+          onClick={() => {
+            setEditingCategory(undefined);
+            setCategoryFormOpen(true);
+          }}
+        >
+          <Plus />
+          Create category
+        </Button>
 
         {budget.categories.length > 0 ? (
           <div className="mt-4 space-y-3">
@@ -180,9 +227,7 @@ export function BudgetDetailsPage() {
               const categoryPlanned = Number(category.plannedAmount);
               const categorySpent = Number(category.spentAmount);
               const categoryPercent =
-                categoryPlanned > 0
-                  ? Math.min((categorySpent / categoryPlanned) * 100, 100)
-                  : 0;
+                categoryPlanned > 0 ? Math.min((categorySpent / categoryPlanned) * 100, 100) : 0;
 
               return (
                 <article
@@ -207,6 +252,34 @@ export function BudgetDetailsPage() {
                         {formatMoney(category.plannedAmount, budget.currency)}
                       </span>
                     </p>
+                  </div>
+                  <div className="mt-4 flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingCategory(category);
+                        setCategoryFormOpen(true);
+                      }}
+                      aria-label={`Edit ${category.name}`}
+                    >
+                      <Pencil />
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        deleteMutation.reset();
+                        setDeletingCategory(category);
+                      }}
+                      aria-label={`Delete ${category.name}`}
+                    >
+                      <Trash2 />
+                      Delete
+                    </Button>
                   </div>
                   <div
                     className="mt-4 h-2 overflow-hidden rounded-full bg-[#eeeaf4]"
@@ -237,6 +310,70 @@ export function BudgetDetailsPage() {
           </div>
         )}
       </section>
+      <CategoryFormDialog
+        budgetId={budget.id}
+        currency={budget.currency}
+        category={editingCategory}
+        open={categoryFormOpen}
+        onOpenChange={(open) => {
+          setCategoryFormOpen(open);
+          if (!open) setEditingCategory(undefined);
+        }}
+      />
+      <Dialog
+        open={Boolean(deletingCategory)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingCategory(undefined);
+            deleteMutation.reset();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete category?</DialogTitle>
+            <DialogDescription>
+              “{deletingCategory?.name}” will be removed from this budget. Categories with expenses
+              cannot be deleted.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteMutation.isError ? (
+            <p role="alert" className="mb-4 text-sm font-medium text-destructive">
+              {deleteMutation.error instanceof Error
+                ? deleteMutation.error.message
+                : 'Unable to delete category.'}
+            </p>
+          ) : null}
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeletingCategory(undefined)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Spinner />
+                  Deleting…
+                </>
+              ) : (
+                <>
+                  <Trash2 />
+                  Delete category
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
