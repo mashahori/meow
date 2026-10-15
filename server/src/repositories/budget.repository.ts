@@ -37,7 +37,7 @@ const BUDGET_SELECT = `
       COALESCE((SELECT SUM(c.planned_amount) FROM categories c WHERE c.budget_id = b.id), 0) -
       COALESCE((SELECT SUM(e.amount) FROM expenses e WHERE e.budget_id = b.id), 0)
     )::numeric(12,2)::text AS "remainingAmount",
-    (u.active_budget_id = b.id) AS "isActive"
+    COALESCE(u.active_budget_id = b.id, FALSE) AS "isActive"
   FROM budgets b
   JOIN users u ON u.id = b.user_id
 `;

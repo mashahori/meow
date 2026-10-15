@@ -52,16 +52,18 @@ export function CategoryFormDialog({
       onOpenChange(false);
     },
   });
+  const { reset: resetForm } = form;
+  const { reset: resetMutation } = mutation;
 
-  // useEffect(() => {
-  //   if (open) {
-  //     form.reset({
-  //       name: category?.name ?? '',
-  //       plannedAmount: category?.plannedAmount ?? '',
-  //     });
-  //     mutation.reset();
-  //   }
-  // }, [category, form, mutation, open]);
+  useEffect(() => {
+    if (!open) return;
+
+    resetForm({
+      name: category?.name ?? '',
+      plannedAmount: category?.plannedAmount ?? '',
+    });
+    resetMutation();
+  }, [category, open, resetForm, resetMutation]);
 
   const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
 
@@ -71,8 +73,8 @@ export function CategoryFormDialog({
       onOpenChange={(nextOpen) => {
         onOpenChange(nextOpen);
         if (!nextOpen) {
-          form.reset();
-          mutation.reset();
+          resetForm();
+          resetMutation();
         }
       }}
     >

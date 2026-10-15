@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { pool } from "../../src/db/pool";
 import {
   isBudgetOwnedByUser,
+  listBudgets,
   updateBudget,
 } from "../../src/repositories/budget.repository";
 
@@ -56,5 +57,20 @@ describe("updateBudget", () => {
     expect(sql).toMatch(/initial_amount = COALESCE\(\$6, initial_amount\)/);
     expect(sql).toMatch(/currency = COALESCE\(\$7, currency\)/);
     expect(params).toEqual(["budget-1", "user-1", null, null, null, 10_000, "USD"]);
+  });
+});
+
+describe("listBudgets", () => {
+  beforeEach(() => {
+    query.mockReset();
+  });
+
+  it("returns false for isActive when the user has no active budget", async () => {
+    query.mockResolvedValue({ rows: [{ isActive: false }] });
+
+    await expect(listBudgets("user-1")).resolves.toEqual([{ isActive: false }]);
+
+    const [sql] = query.mock.calls[0];
+    expect(sql).toMatch(/COALESCE\(u\.active_budget_id = b\.id, FALSE\) AS "isActive"/);
   });
 });

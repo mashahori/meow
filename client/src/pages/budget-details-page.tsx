@@ -155,47 +155,46 @@ export function BudgetDetailsPage() {
             </div>
           </div>
         </div>
-        <div className="mt-7 border-t border-border pt-5">
-          <p className="text-sm text-muted-foreground">Starting amount</p>
-          <p className="mt-1 font-display text-2xl font-semibold tracking-tight text-foreground">
-            {formatMoney(budget.initialAmount, budget.currency)}
-          </p>
+        <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border pt-5 sm:grid-cols-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Starting amount</p>
+            <p className="mt-1 font-display text-2xl font-semibold tracking-tight text-foreground">
+              {formatMoney(budget.initialAmount, budget.currency)}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Planned</p>
+            <p className="mt-1 font-display text-2xl font-semibold text-foreground">
+              {formatMoney(budget.plannedAmount, budget.currency)}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Spent</p>
+            <p className="mt-1 font-display text-2xl font-semibold text-foreground">
+              {formatMoney(budget.spentAmount, budget.currency)}
+            </p>
+            <div
+              className="mt-3 h-2 overflow-hidden rounded-full bg-[#eeeaf4]"
+              role="progressbar"
+              aria-label="Budget spent"
+              aria-valuemin={0}
+              aria-valuemax={planned || 1}
+              aria-valuenow={Math.min(Math.max(spent, 0), planned || 1)}
+            >
+              <div
+                className="h-full rounded-full bg-[#7650e8]"
+                style={{ width: `${spendPercent}%` }}
+              />
+            </div>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Remaining</p>
+            <p className="mt-1 font-display text-2xl font-semibold text-foreground">
+              {formatMoney(budget.remainingAmount, budget.currency)}
+            </p>
+          </div>
         </div>
       </header>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">Planned</p>
-          <p className="mt-2 font-display text-2xl font-semibold text-foreground">
-            {formatMoney(budget.plannedAmount, budget.currency)}
-          </p>
-        </article>
-        <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">Spent</p>
-          <p className="mt-2 font-display text-2xl font-semibold text-foreground">
-            {formatMoney(budget.spentAmount, budget.currency)}
-          </p>
-          <div
-            className="mt-4 h-2 overflow-hidden rounded-full bg-[#eeeaf4]"
-            role="progressbar"
-            aria-label="Budget spent"
-            aria-valuemin={0}
-            aria-valuemax={planned || 1}
-            aria-valuenow={Math.min(Math.max(spent, 0), planned || 1)}
-          >
-            <div
-              className="h-full rounded-full bg-[#7650e8]"
-              style={{ width: `${spendPercent}%` }}
-            />
-          </div>
-        </article>
-        <article className="rounded-xl border border-border bg-white p-5 shadow-sm">
-          <p className="text-sm text-muted-foreground">Remaining</p>
-          <p className="mt-2 font-display text-2xl font-semibold text-foreground">
-            {formatMoney(budget.remainingAmount, budget.currency)}
-          </p>
-        </article>
-      </div>
 
       <section className="mt-9">
         <div className="flex items-end justify-between gap-4">
@@ -232,26 +231,34 @@ export function BudgetDetailsPage() {
               return (
                 <article
                   key={category.id}
-                  className="rounded-xl border border-border bg-white p-5 shadow-sm"
+                  className="group rounded-xl border border-border bg-white p-5 shadow-sm"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <span className="grid size-10 place-items-center rounded-xl bg-[#f4f1fa] text-[#7650e8]">
-                        <CircleDollarSign className="size-5" />
-                      </span>
-                      <div>
-                        <h3 className="font-semibold text-foreground">{category.name}</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {formatMoney(categorySpent, budget.currency)} spent
-                        </p>
+                    <Link
+                      to={`/budgets/${budget.id}/${category.id}`}
+                      className="flex flex-1 flex-wrap items-center justify-between gap-4 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={`Open ${category.name} expenses`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="grid size-10 place-items-center rounded-xl bg-[#f4f1fa] text-[#7650e8]">
+                          <CircleDollarSign className="size-5" />
+                        </span>
+                        <div>
+                          <h3 className="font-semibold text-foreground group-hover:text-primary">
+                            {category.name}
+                          </h3>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {formatMoney(categorySpent, budget.currency)} spent
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Planned{' '}
-                      <span className="font-semibold text-foreground">
-                        {formatMoney(category.plannedAmount, budget.currency)}
-                      </span>
-                    </p>
+                      <p className="text-sm text-muted-foreground">
+                        Planned{' '}
+                        <span className="font-semibold text-foreground">
+                          {formatMoney(category.plannedAmount, budget.currency)}
+                          </span>
+                        </p>
+                    </Link>
                   </div>
                   <div className="mt-4 flex justify-end gap-2">
                     <Button

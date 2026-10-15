@@ -6,6 +6,8 @@ import { errorHandler } from "./middleware/error-handler";
 import { requestLogger } from "./middleware/request-logger";
 import authRoutes from "./routes/auth.routes";
 import budgetRoutes from "./routes/budget.routes";
+import categoryRoutes from "./routes/category.routes";
+import expenseRoutes from "./routes/expense.routes";
 
 export const app: Application = express();
 
@@ -16,6 +18,8 @@ app.use(sessionMiddleware);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/budgets", budgetRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/expenses", expenseRoutes);
 
 app.use((_req, _res, next) => {
   next(new NotFoundError("Route not found"));
