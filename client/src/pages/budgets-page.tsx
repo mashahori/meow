@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowUpRight, CalendarDays, Ellipsis, Pencil, Trash2, WalletCards } from 'lucide-react';
+import { CalendarDays, Ellipsis, Pencil, Trash2, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu } from '@base-ui/react/menu';

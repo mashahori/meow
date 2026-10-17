@@ -3,7 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pool } from "./pool";
 
-const migrationsDirectory = path.resolve(process.cwd(), "src/db/migrations");
+const migrationsDirectory = path.resolve(__dirname, "migrations");
 
 async function migrate() {
   const client = await pool.connect();
