@@ -1,41 +1,66 @@
-# Budget Planner
+# 💸 Budget Planner
 
-An application for budget planning and expense tracking.
+### Plan your budget, track your expenses, and stay in control of your finances
 
-## Project Structure
+Budget Planner helps you manage budgets, allocate planned amounts to
+categories, and keep track of expenses. The project includes a web client and
+an authenticated REST API backed by PostgreSQL.
 
-- `client` - React + TypeScript + Vite frontend
-- `server` - Express + TypeScript + PostgreSQL backend
-- `server/src` - Server source code (routes, controllers, services, repositories, middleware)
-- `server/test` - Server unit and integration tests (Jest)
-- `server/docs` - API and data model documentation
-- `server/src/db/migrations` - SQL database migrations
+[![Node.js](https://img.shields.io/badge/Node.js-22.12%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-## Requirements
+## ✨ Features
 
-- Node.js 20+
-- PostgreSQL 14+
-- npm (included with Node.js)
+- 🔐 Register and sign in with secure session-based authentication.
+- 🗓️ Create and edit budgets with date ranges and currencies.
+- 🗂️ Organize planned amounts into categories.
+- 🧾 Add and manage expenses.
+- 📊 Review planned, spent, and remaining amounts.
+- 🗄️ Manage the database schema with PostgreSQL migrations.
+- ☁️ Build and deploy with Docker on Amvera Cloud.
 
-## Database Setup
+## 🧰 Tech stack
 
-Create a PostgreSQL database:
+| Area | Technologies |
+| --- | --- |
+| Client | React, TypeScript, Vite, React Router, TanStack Query |
+| Server | Node.js, Express, TypeScript |
+| Database | PostgreSQL |
+| Authentication | Express Session, PostgreSQL session store |
+| Server tests | Jest |
+| Deployment | Docker, Amvera Cloud |
+
+## 🚀 Getting started
+
+### Prerequisites
+
+- Node.js 22.12 or later
+- PostgreSQL 14 or later
+- npm
+
+### 1. Create a database
+
+Create a local database:
 
 ```powershell
 createdb -U postgres budget_planner
 ```
 
-Or run this command in `psql`:
+Alternatively, run this in `psql`:
 
 ```sql
 CREATE DATABASE budget_planner;
 ```
 
-## Server Setup
+### 2. Configure and start the server
+
+Copy the example environment file and update `server/.env` with your local
+PostgreSQL connection details:
 
 ```powershell
 cd server
-npm install
 Copy-Item .env.example .env
 ```
 
@@ -44,158 +69,95 @@ Set the values in `server/.env`:
 ```env
 PORT=3000
 CORS_ORIGIN=http://localhost:5173
-DATABASE_URL=postgres://postgres:password@localhost:5432/budget_planner
-SESSION_SECRET=your-secret-key-at-least-32-chars
+DATABASE_URL=postgresql://postgres:your-password@localhost:5432/budget_planner
+SESSION_SECRET=replace-with-a-random-secret-at-least-32-characters-long
 ```
 
-> **Note**: `SESSION_SECRET` is required for signing session ID cookies.
+Replace the database username and password with your own. `SESSION_SECRET`
+must be a unique random value of at least 32 characters. Never commit real
+credentials or secrets to Git.
 
-## Migrations
-
-Run the migrations from the `server` directory:
+Install dependencies, apply the migrations, and start the server:
 
 ```powershell
+npm install
 npm run migrate
-```
-
-The migrations create and update the following tables:
-
-- `users` — user accounts with authentication and optional `active_budget_id`
-- `budgets` — budgets with date ranges and status (`active`, `archived`)
-- `categories` — budget categories with planned amounts
-- `expenses` — recorded expenses linked to budgets and categories
-- `session` — PostgreSQL session storage for Express sessions
-- `schema_migrations` — tracks applied migration files
-
-Existing migrations in `server/src/db/migrations`:
-
-- `001_initial.sql` — initial schema (`users`, `budgets`, `categories`, `expenses`, and indexes)
-- `002_sessions.sql` — `session` table for `connect-pg-simple`
-- `003_active_budget.sql` — adds `active_budget_id` foreign key column to `users`
-
-Running the migration command is idempotent; already applied migrations are skipped automatically.
-
-Add schema changes as sequential files in `server/src/db/migrations`, for example:
-
-```text
-004_add_budget_currency.sql
-```
-
-Do not modify migrations that have already been applied.
-
-## Running the Server
-
-```powershell
-cd server
 npm run build
 npm start
 ```
 
-The server will be available at `http://localhost:3000`.
+The API will be available at `http://localhost:3000`.
 
-## Deploy to Amvera Cloud
+### 3. Start the client
 
-The repository is configured to deploy from its root as a single Docker-based
-Amvera application. The Docker image builds the client and server, serves the
-React app through Express, and applies pending database migrations on startup.
-The frontend and API share one origin, so no `VITE_API_URL` or `CORS_ORIGIN`
-setting is needed in production.
+In a separate terminal, from the project root:
 
-1. Create a PostgreSQL database in Amvera and copy its connection string.
-2. Create an application connected to this repository and deploy from the
-   repository root (where `amvera.yml` and `Dockerfile` are located).
-3. Set these application environment variables in Amvera:
-   - `DATABASE_URL` — the PostgreSQL connection string.
-   - `SESSION_SECRET` — a unique random secret with at least 32 characters.
-4. Start a build and assign a domain to the running application.
+```powershell
+cd client
+npm install
+npm run dev
+```
 
-`NODE_ENV=production` and `PORT=3000` are set by the container image; this port
-matches `run.containerPort` in `amvera.yml`. Keep the PostgreSQL database
-separate from the application container so database data persists across
-deployments.
+Open the URL printed by Vite (by default, `http://localhost:5173`). During local
+development, Vite proxies API requests to the server on port `3000`.
 
-### Server Quality Checks & Tests
+## 🧪 Quality checks
 
-Run tests:
+Run these commands from the relevant directory.
+
+**Server** (`server`):
 
 ```powershell
 npm test
-```
-
-Type checking, linting, and formatting:
-
-```powershell
 npm run compile
 npm run lint
 npm run format:check
 ```
 
-Format code:
+**Client** (`client`):
 
 ```powershell
-npm run format
-```
-
-## Client Setup & Running
-
-In a separate terminal:
-
-```powershell
-cd client
-npm install
-Copy-Item .env.example .env
-npm run dev
-```
-
-Configure `client/.env` if needed:
-
-```env
-VITE_API_URL=http://localhost:3000
-```
-
-The client will be available at `http://localhost:5173`.
-
-### Client Quality Checks
-
-```powershell
-cd client
 npm run compile
 npm run lint
 npm run format:check
 npm run build
 ```
 
-## Implemented API Endpoints
+Run `npm run format` to format files automatically.
 
-All endpoints except registration and login require an authenticated session cookie.
+## ☁️ Deploy to Amvera Cloud
 
-### Authentication (`/api/auth`)
+The repository is configured to build a Docker image from the project root. The
+image builds the client and server; the server serves the client app and runs
+pending database migrations when the container starts.
 
-- `POST /api/auth/register` — register a new user
-- `POST /api/auth/login` — log in and establish session
-- `POST /api/auth/logout` — log out and destroy session
-- `GET /api/auth/me` — get current authenticated user profile
+1. Create a PostgreSQL database in Amvera and get its connection string.
+2. Create an application connected to this repository and use the repository
+   root as the build root (where `Dockerfile` and `amvera.yml` are located).
+3. Set the following application environment variables:
+   - `DATABASE_URL` — the PostgreSQL connection string.
+   - `SESSION_SECRET` — a unique random secret of at least 32 characters.
+4. Start a build and assign a domain to the application.
 
-### Budgets (`/api/budgets`)
+The container sets `NODE_ENV=production` and `PORT=3000`. Keep the database as a
+separate resource so its data persists across deployments.
 
-- `GET /api/budgets` — list user's budgets with calculated planned, spent, and remaining totals
-- `POST /api/budgets` — create a new budget (the first created budget automatically becomes active)
-- `GET /api/budgets/active` — get the current active budget
-- `PUT /api/budgets/active` — set active budget (`{ "budgetId": "..." }`)
-- `GET /api/budgets/:budgetId` — get budget details including category summaries
-- `PATCH /api/budgets/:budgetId` — update budget name or dates
-- `DELETE /api/budgets/:budgetId` — archive budget (soft delete)
+## 📚 Documentation
 
-## Seed Data
+- [API documentation](server/docs/api.md)
+- [Data model](server/docs/data-model.md)
+- [SQL schema](server/src/db/schema.sql)
+- [Database migrations](server/src/db/migrations)
 
-The project currently includes database structure migrations, but a separate seed command has not been added yet. Test records can be created through the API or SQL after running the migrations.
+## 🗂️ Project structure
 
-## Documentation
+```text
+client/                    React client
+server/                    Express API
+server/src/db/migrations/  PostgreSQL migrations
+server/docs/               API and data model documentation
+```
 
-- [API](server/docs/api.md)
-- [Data Model](server/docs/data-model.md)
-- [Complete SQL Schema](server/src/db/schema.sql)
-- Migrations:
-  - [001_initial.sql](server/src/db/migrations/001_initial.sql)
-  - [002_sessions.sql](server/src/db/migrations/002_sessions.sql)
-  - [003_active_budget.sql](server/src/db/migrations/003_active_budget.sql)
+---
+
+Made to make planning your spending a little easier 💚
