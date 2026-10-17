@@ -6,6 +6,8 @@ Budget Planner helps you manage budgets, allocate planned amounts to
 categories, and keep track of expenses. The project includes a web client and
 an authenticated REST API backed by PostgreSQL.
 
+🚀 **Demo:** https://meow-budget-mashahori.msk1.amvera.tech/
+
 [![Node.js](https://img.shields.io/badge/Node.js-22.12%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
