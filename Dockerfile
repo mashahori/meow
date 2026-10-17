@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim AS build
+FROM node:24.21.0-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ RUN npm --prefix client run build \
   && cp server/src/db/migrations/*.sql server/dist/db/migrations/ \
   && npm prune --prefix server --omit=dev
 
-FROM node:22-bookworm-slim
+FROM node:24.21.0-bookworm-slim
 
 ENV NODE_ENV=production
 ENV PORT=3000

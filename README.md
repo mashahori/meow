@@ -36,7 +36,7 @@ an authenticated REST API backed by PostgreSQL.
 
 ### Prerequisites
 
-- Node.js 22.12 or later
+- Node.js 24.21.0 or later
 - PostgreSQL 14 or later
 - npm
 
