@@ -1,8 +1,18 @@
 import { NextFunction, Request, Response } from "express";
 import { UnauthorizedError } from "../errors/app-error";
-import { authenticateUser, getUserById, registerUser } from "../services/user";
+import {
+  authenticateUser,
+  getUserById,
+  registerUser,
+} from "../services/user";
+import {
+  requestPasswordReset,
+  resetPassword,
+} from "../services/user/password-reset.service";
 import {
   validateLoginPayload,
+  validatePasswordResetPayload,
+  validatePasswordResetRequestPayload,
   validateRegisterPayload,
 } from "../validators/auth.validator";
 
@@ -48,6 +58,38 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function forgotPassword(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const payload = validatePasswordResetRequestPayload(req.body);
+    await requestPasswordReset(payload.email);
+
+    res.status(200).json({
+      message: "If an account with that email exists, a reset link has been sent.",
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function completePasswordReset(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const payload = validatePasswordResetPayload(req.body);
+    await resetPassword(payload.token, payload.password);
+
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+}
+
 export function logout(req: Request, res: Response, next: NextFunction) {
   req.session.destroy((error) => {
     if (error) {
@@ -75,4 +117,3 @@ export async function me(req: Request, res: Response, next: NextFunction) {
     next(error);
   }
 }
-

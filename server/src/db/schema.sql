@@ -56,5 +56,12 @@ CREATE TABLE IF NOT EXISTS "session" (
 );
 
 CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  token_hash char(64) NOT NULL UNIQUE,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS active_budget_id uuid REFERENCES budgets(id) ON DELETE SET NULL;

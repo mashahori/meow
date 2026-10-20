@@ -2,6 +2,8 @@ import { describe, expect, it } from "@jest/globals";
 import { ZodError } from "zod";
 import {
   validateLoginPayload,
+  validatePasswordResetPayload,
+  validatePasswordResetRequestPayload,
   validateRegisterPayload,
 } from "../../src/validators/auth.validator";
 
@@ -77,5 +79,25 @@ describe("validateLoginPayload", () => {
 
   it("rejects an empty body", () => {
     expect(() => validateLoginPayload({})).toThrow(ZodError);
+  });
+});
+
+describe("password reset payload validation", () => {
+  it("normalizes the email for a reset request", () => {
+    expect(
+      validatePasswordResetRequestPayload({ email: " USER@Example.com " }),
+    ).toEqual({ email: "user@example.com" });
+  });
+
+  it("requires a 43-character token and a password of at least 8 characters", () => {
+    expect(() =>
+      validatePasswordResetPayload({
+        token: "a".repeat(43),
+        password: "password",
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validatePasswordResetPayload({ token: "short", password: "1234567" }),
+    ).toThrow(ZodError);
   });
 });

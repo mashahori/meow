@@ -39,7 +39,10 @@ const apiBaseUrl = (
   import.meta.env.DEV ? '' : import.meta.env.VITE_API_URL || ''
 ).replace(/\/+$/, '')
 
-async function authRequest(path: string, body?: Credentials): Promise<Response> {
+async function authRequest(
+  path: string,
+  body?: Record<string, string>,
+): Promise<Response> {
   let response: Response
 
   try {
@@ -78,6 +81,17 @@ export async function login(credentials: Credentials): Promise<AuthUser> {
 export async function register(credentials: Credentials): Promise<void> {
   const response = await authRequest('/register', credentials)
   authResponseSchema.parse(await response.json())
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await authRequest('/forgot-password', { email })
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<void> {
+  await authRequest('/reset-password', { token, password })
 }
 
 export async function getCurrentUser(): Promise<AuthUser> {

@@ -16,6 +16,7 @@ an authenticated REST API backed by PostgreSQL.
 ## ✨ Features
 
 - 🔐 Register and sign in with secure session-based authentication.
+- 🔑 Recover forgotten passwords with one-time email reset links.
 - 🗓️ Create and edit budgets with date ranges and currencies.
 - 🗂️ Organize planned amounts into categories.
 - 🧾 Add and manage expenses.
@@ -73,11 +74,19 @@ PORT=3000
 CORS_ORIGIN=http://localhost:5173
 DATABASE_URL=postgresql://postgres:your-password@localhost:5432/budget_planner
 SESSION_SECRET=replace-with-a-random-secret-at-least-32-characters-long
+CLIENT_URL=http://localhost:5173
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM=Budget Planner <no-reply@example.com>
 ```
 
 Replace the database username and password with your own. `SESSION_SECRET`
 must be a unique random value of at least 32 characters. Never commit real
-credentials or secrets to Git.
+credentials or secrets to Git. Configure the SMTP values with credentials
+from your email provider to enable password recovery. Reset links expire after
+30 minutes.
 
 Install dependencies, apply the migrations, and start the server:
 

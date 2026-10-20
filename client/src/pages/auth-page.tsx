@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
 import { Button } from '../components/ui/button'
 import { Field } from '../components/ui/field'
@@ -41,6 +41,7 @@ export function AuthPage({ mode }: AuthPageProps) {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -86,6 +87,11 @@ export function AuthPage({ mode }: AuthPageProps) {
             </div>
 
             <form className="space-y-5" onSubmit={isLogin ? onLogin : onRegister} noValidate>
+              {isLogin && searchParams.get('passwordReset') === '1' ? (
+                <p role="status" className="text-sm font-medium text-emerald-700">
+                  Password updated. Sign in with your new password.
+                </p>
+              ) : null}
               <Field label="Email address" error={(isLogin ? loginForm.formState.errors.email : registerForm.formState.errors.email)?.message}>
                 <div className="relative">
                   <Mail className="absolute left-4 top-3.5 text-[#aaa4b7]" size={18} />
@@ -113,7 +119,7 @@ export function AuthPage({ mode }: AuthPageProps) {
                 </Field>
               ) : (
                 <div className="flex justify-end">
-                  <button type="button" className="text-sm font-semibold text-[#6d43e5] hover:text-[#512ab9]">Forgot password?</button>
+                  <Link className="text-sm font-semibold text-[#6d43e5] hover:text-[#512ab9]" to="/forgot-password">Forgot password?</Link>
                 </div>
               )}
               {!isLogin ? (

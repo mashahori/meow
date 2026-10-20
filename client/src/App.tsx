@@ -8,6 +8,7 @@ import { AuthPage } from './pages/auth-page'
 import { BudgetsPage } from './pages/budgets-page'
 import { BudgetDetailsPage } from './pages/budget-details-page'
 import { CategoryDetailsPage } from './pages/category-details-page'
+import { PasswordResetPage } from './pages/password-reset-page'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/register" element={<AuthPage mode="register" />} />
+            <Route path="/forgot-password" element={<PasswordResetPage mode="request" />} />
+            <Route path="/reset-password" element={<PasswordResetPage mode="reset" />} />
             <Route element={<ProtectedLayout />}>
               {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
               <Route path="/budgets" element={<BudgetsPage />} />
