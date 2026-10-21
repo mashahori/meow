@@ -16,7 +16,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
     "/reset-password",
     requiredEnvironmentVariable("CLIENT_URL"),
   );
-  const mailTransport = createMailTransport();
+  const mailTransport = isMailMocked() ? null : createMailTransport();
   const user = await findUserByEmail(email);
   if (!user) {
     return;
@@ -32,7 +32,12 @@ export async function requestPasswordReset(email: string): Promise<void> {
 
   resetUrl.searchParams.set("token", token);
 
-  await mailTransport.sendMail({
+  if (isMailMocked()) {
+    console.info(`[mail mock] Password reset link for ${user.email}: ${resetUrl.toString()}`);
+    return;
+  }
+
+  await mailTransport!.sendMail({
     from: requiredEnvironmentVariable("SMTP_FROM"),
     to: user.email,
     subject: "Reset your password",
@@ -61,6 +66,10 @@ export async function resetPassword(
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
+}
+
+function isMailMocked(): boolean {
+  return process.env.MAIL_MOCK === "true";
 }
 
 function createMailTransport() {
