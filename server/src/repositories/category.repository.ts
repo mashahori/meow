@@ -19,8 +19,8 @@ const CATEGORY_SELECT = `
     c.budget_id AS "budgetId",
     c.name,
     c.planned_amount::text AS "plannedAmount",
-    COALESCE(SUM(e.amount), 0)::numeric(12,2)::text AS "spentAmount",
-    (c.planned_amount - COALESCE(SUM(e.amount), 0))::numeric(12,2)::text AS "remainingAmount"
+    COALESCE(SUM(e.amount), 0)::numeric(12,0)::text AS "spentAmount",
+    (c.planned_amount - COALESCE(SUM(e.amount), 0))::numeric(12,0)::text AS "remainingAmount"
   FROM categories c
   LEFT JOIN expenses e ON e.category_id = c.id
 `;

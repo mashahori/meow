@@ -56,6 +56,13 @@ describe('budget validators', () => {
       name: 'x',
       startDate: '2026-06-01',
       endDate: '2026-06-30',
+      initialAmount: 10.5,
+      currency: 'RUB',
+    },
+    {
+      name: 'x',
+      startDate: '2026-06-01',
+      endDate: '2026-06-30',
       initialAmount: 0,
       currency: 'GBP',
     },
@@ -77,6 +84,7 @@ describe('budget validators', () => {
 
   it.each([
     { initialAmount: -1 },
+    { initialAmount: 10.5 },
     { currency: 'GBP' },
   ])('rejects invalid amount or currency on update %#', (body) => {
     expect(() => validateUpdateBudgetPayload(body)).toThrow();

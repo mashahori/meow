@@ -31,12 +31,12 @@ const BUDGET_SELECT = `
     b.status,
     b.initial_amount::text AS "initialAmount",
     b.currency,
-    COALESCE((SELECT SUM(c.planned_amount) FROM categories c WHERE c.budget_id = b.id), 0)::numeric(12,2)::text AS "plannedAmount",
-    COALESCE((SELECT SUM(e.amount) FROM expenses e WHERE e.budget_id = b.id), 0)::numeric(12,2)::text AS "spentAmount",
+    COALESCE((SELECT SUM(c.planned_amount) FROM categories c WHERE c.budget_id = b.id), 0)::numeric(12,0)::text AS "plannedAmount",
+    COALESCE((SELECT SUM(e.amount) FROM expenses e WHERE e.budget_id = b.id), 0)::numeric(12,0)::text AS "spentAmount",
     (
       COALESCE((SELECT SUM(c.planned_amount) FROM categories c WHERE c.budget_id = b.id), 0) -
       COALESCE((SELECT SUM(e.amount) FROM expenses e WHERE e.budget_id = b.id), 0)
-    )::numeric(12,2)::text AS "remainingAmount",
+    )::numeric(12,0)::text AS "remainingAmount",
     COALESCE(u.active_budget_id = b.id, FALSE) AS "isActive"
   FROM budgets b
   JOIN users u ON u.id = b.user_id
@@ -81,7 +81,7 @@ export async function listBudgetCategories(budgetId: string): Promise<CategorySu
        c.id,
        c.name,
        c.planned_amount::text AS "plannedAmount",
-       COALESCE(SUM(e.amount), 0)::numeric(12,2)::text AS "spentAmount"
+       COALESCE(SUM(e.amount), 0)::numeric(12,0)::text AS "spentAmount"
      FROM categories c
      LEFT JOIN expenses e ON e.category_id = c.id
      WHERE c.budget_id = $1

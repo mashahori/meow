@@ -9,19 +9,22 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Field } from './ui/field';
 import { Input } from './ui/input';
 import { Spinner } from './ui/spinner';
+import { useTranslation } from '../contexts/language-context';
 
-const amountPattern = /^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/;
+const amountPattern = /^(?:0|[1-9]\d{0,9})$/;
 
-const expenseFormSchema = z.object({
-  amount: z
-    .string()
-    .regex(amountPattern, 'Enter an amount with up to two decimals')
-    .refine((value) => Number(value) > 0, 'Amount must be greater than zero'),
-  spentAt: z.string().date(),
-  note: z.string().trim().max(500, 'Maximum 500 characters'),
-});
+function createExpenseFormSchema(t: (text: string) => string) {
+  return z.object({
+    amount: z
+      .string()
+      .regex(amountPattern, t('Enter a whole amount'))
+      .refine((value) => Number(value) > 0, t('Amount must be greater than zero')),
+    spentAt: z.string().date(),
+    note: z.string().trim().max(500, t('Maximum 500 characters')),
+  });
+}
 
-type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
+type ExpenseFormValues = z.infer<ReturnType<typeof createExpenseFormSchema>>;
 
 type ExpenseFormDialogProps = {
   budgetId: string;
@@ -54,7 +57,9 @@ export function ExpenseFormDialog({
   open,
   onOpenChange,
 }: ExpenseFormDialogProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const expenseFormSchema = createExpenseFormSchema(t);
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
@@ -103,7 +108,7 @@ export function ExpenseFormDialog({
 
   const onSubmit = form.handleSubmit((values) => {
     if (values.spentAt < startDate || values.spentAt > endDate) {
-      form.setError('spentAt', { message: 'Date must be within the budget period' });
+      form.setError('spentAt', { message: t('Date must be within the budget period') });
       return;
     }
     mutation.mutate(values);
@@ -122,28 +127,28 @@ export function ExpenseFormDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{expense ? 'Edit expense' : 'Add an expense'}</DialogTitle>
+          <DialogTitle>{t(expense ? 'Edit expense' : 'Add an expense')}</DialogTitle>
           <DialogDescription>
             {expense
-              ? 'Update the expense amount, date, or note.'
-              : 'Record a new expense in this category.'}
+              ? t('Update the expense amount, date, or note.')
+              : t('Record a new expense in this category.')}
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-5" onSubmit={onSubmit} noValidate>
           <Field
-            label={`Amount (${currency})`}
+            label={`${t('Amount')} (${currency})`}
             htmlFor="expense-amount"
             error={form.formState.errors.amount?.message}
           >
             <Input
               id="expense-amount"
-              inputMode="decimal"
-              placeholder="0.00"
+              inputMode="numeric"
+              placeholder="0"
               autoFocus
               {...form.register('amount')}
             />
           </Field>
-          <Field label="Date" htmlFor="expense-date" error={form.formState.errors.spentAt?.message}>
+          <Field label={t('Date')} htmlFor="expense-date" error={form.formState.errors.spentAt?.message}>
             <Input
               id="expense-date"
               type="date"
@@ -152,10 +157,10 @@ export function ExpenseFormDialog({
               {...form.register('spentAt')}
             />
           </Field>
-          <Field label="Note" htmlFor="expense-note" error={form.formState.errors.note?.message}>
+          <Field label={t('Note')} htmlFor="expense-note" error={form.formState.errors.note?.message}>
             <Input
               id="expense-note"
-              placeholder="What was this expense for?"
+              placeholder={t('What was this expense for?')}
               maxLength={500}
               {...form.register('note')}
             />
@@ -163,8 +168,8 @@ export function ExpenseFormDialog({
           {mutation.isError ? (
             <p role="alert" className="text-sm font-medium text-destructive">
               {mutation.error instanceof Error
-                ? mutation.error.message
-                : `Unable to ${expense ? 'update' : 'create'} expense.`}
+                ? t(mutation.error.message)
+                : t(expense ? 'Unable to update expense.' : 'Unable to create expense.')}
             </p>
           ) : null}
           <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
@@ -174,18 +179,18 @@ export function ExpenseFormDialog({
               onClick={() => onOpenChange(false)}
               disabled={mutation.isPending}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={mutation.isPending}>
               {mutation.isPending ? (
                 <>
                   <Spinner />
-                  Saving…
+                  {t('Saving…')}
                 </>
               ) : expense ? (
-                'Save changes'
+                t('Save changes')
               ) : (
-                'Add expense'
+                t('Add expense')
               )}
             </Button>
           </div>

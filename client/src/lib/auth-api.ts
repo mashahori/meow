@@ -1,127 +1,81 @@
-import { z } from 'zod'
+import { z } from 'zod';
+import { requestJson, requestVoid } from './api-client';
 
 const userSchema = z.object({
   id: z.string(),
   email: z.string().email(),
-})
+});
 
-const authResponseSchema = z.object({ user: userSchema })
-const apiErrorSchema = z.object({
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-  }),
-})
+const authResponseSchema = z.object({ user: userSchema });
 
-export type AuthUser = z.infer<typeof userSchema>
+export type AuthUser = z.infer<typeof userSchema>;
 export type Credentials = {
-  email: string
-  password: string
-}
+  email: string;
+  password: string;
+};
 
-export class ApiError extends Error {
-  public readonly status: number
-  public readonly code?: string
+export { ApiError } from './api-client';
 
-  constructor(
-    message: string,
-    status: number,
-    code?: string,
-  ) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-    this.code = code
-  }
-}
+const authNetworkError = 'Не удалось подключиться к серверу. Проверьте его доступность.';
 
-const apiBaseUrl = (
-  import.meta.env.DEV ? '' : import.meta.env.VITE_API_URL || ''
-).replace(/\/+$/, '')
-
-async function authRequest(
-  path: string,
-  body?: Record<string, string>,
-): Promise<Response> {
-  let response: Response
-
-  try {
-    response = await fetch(`${apiBaseUrl}/api/auth${path}`, {
-      method: body ? 'POST' : 'GET',
-      credentials: 'include',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    })
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Не удалось подключиться к серверу. Проверьте его доступность.', 0)
-    }
-    throw error
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json()
-    const parsedError = apiErrorSchema.safeParse(payload)
-    throw new ApiError(
-      parsedError.success ? parsedError.data.error.message : `Ошибка запроса (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    )
-  }
-
-  return response
+function postJson(body: Record<string, string>): RequestInit {
+  return {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  };
 }
 
 export async function login(credentials: Credentials): Promise<AuthUser> {
-  const response = await authRequest('/login', credentials)
-  const payload: unknown = await response.json()
-  return authResponseSchema.parse(payload).user
+  const response = await requestJson(
+    '/api/auth/login',
+    authResponseSchema,
+    'Ошибка запроса',
+    postJson(credentials),
+    authNetworkError,
+  );
+  return response.user;
 }
 
 export async function register(credentials: Credentials): Promise<void> {
-  const response = await authRequest('/register', credentials)
-  authResponseSchema.parse(await response.json())
+  await requestJson(
+    '/api/auth/register',
+    authResponseSchema,
+    'Ошибка запроса',
+    postJson(credentials),
+    authNetworkError,
+  );
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  await authRequest('/forgot-password', { email })
+  await requestVoid(
+    '/api/auth/forgot-password',
+    'Ошибка запроса',
+    postJson({ email }),
+    authNetworkError,
+  );
 }
 
-export async function resetPassword(
-  token: string,
-  password: string,
-): Promise<void> {
-  await authRequest('/reset-password', { token, password })
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await requestVoid(
+    '/api/auth/reset-password',
+    'Ошибка запроса',
+    postJson({ token, password }),
+    authNetworkError,
+  );
 }
 
-export async function getCurrentUser(): Promise<AuthUser> {
-  const response = await authRequest('/me')
-  const payload: unknown = await response.json()
-  return authResponseSchema.parse(payload).user
+export async function getCurrentUser(signal?: AbortSignal): Promise<AuthUser> {
+  const response = await requestJson(
+    '/api/auth/me',
+    authResponseSchema,
+    'Ошибка запроса',
+    { signal },
+    authNetworkError,
+  );
+  return response.user;
 }
 
 export async function logout(): Promise<void> {
-  let response: Response
-
-  try {
-    response = await fetch(`${apiBaseUrl}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    })
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Не удалось подключиться к серверу. Проверьте его доступность.', 0)
-    }
-    throw error
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json()
-    const parsedError = apiErrorSchema.safeParse(payload)
-    throw new ApiError(
-      parsedError.success ? parsedError.data.error.message : `Ошибка запроса (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    )
-  }
+  await requestVoid('/api/auth/logout', 'Ошибка запроса', { method: 'POST' }, authNetworkError);
 }

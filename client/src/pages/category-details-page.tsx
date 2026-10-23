@@ -22,26 +22,26 @@ import {
 import { Spinner } from '../components/ui/spinner';
 import { getBudgetDetails } from '../lib/budget-api';
 import { deleteExpense, getCategoryExpenses, type Expense } from '../lib/expense-api';
+import { useTranslation } from '../contexts/language-context';
 
-const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
-  day: '2-digit',
-  month: 'long',
-  year: 'numeric',
-});
-
-function formatDate(date: string) {
-  return dateFormatter.format(new Date(`${date}T00:00:00`));
+function formatDate(date: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(`${date}T00:00:00`));
 }
 
-function formatMoney(amount: string | number, currency: string) {
-  return new Intl.NumberFormat('ru-RU', {
+function formatMoney(amount: string | number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   }).format(Number(amount));
 }
 
 export function CategoryDetailsPage() {
+  const { t, locale } = useTranslation();
   const { budgetId, categoryId } = useParams();
   const [expenseFormOpen, setExpenseFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense>();
@@ -49,24 +49,24 @@ export function CategoryDetailsPage() {
   const queryClient = useQueryClient();
   const budgetQuery = useQuery({
     queryKey: ['budget', budgetId],
-    queryFn: () => {
-      if (!budgetId) throw new Error('Budget not found.');
-      return getBudgetDetails(budgetId);
+    queryFn: ({ signal }) => {
+      if (!budgetId) throw new Error(t('Budget not found.'));
+      return getBudgetDetails(budgetId, signal);
     },
     enabled: Boolean(budgetId),
   });
   const category = budgetQuery.data?.categories.find((item) => item.id === categoryId);
   const expensesQuery = useQuery({
     queryKey: ['category-expenses', categoryId],
-    queryFn: () => {
-      if (!categoryId) throw new Error('Category not found.');
-      return getCategoryExpenses(categoryId);
+    queryFn: ({ signal }) => {
+      if (!categoryId) throw new Error(t('Category not found.'));
+      return getCategoryExpenses(categoryId, signal);
     },
     enabled: Boolean(category),
   });
   const deleteMutation = useMutation({
     mutationFn: () => {
-      if (!deletingExpense) throw new Error('Expense not found.');
+      if (!deletingExpense) throw new Error(t('Expense not found.'));
       return deleteExpense(deletingExpense.id);
     },
     onSuccess: async () => {
@@ -82,8 +82,8 @@ export function CategoryDetailsPage() {
     return (
       <section className="mx-auto max-w-5xl">
         <div className="flex min-h-64 items-center justify-center gap-3 rounded-xl border border-border bg-card text-sm font-medium text-muted-foreground shadow-sm">
-          <Spinner className="size-5 text-primary" aria-label="Loading budget" />
-          Loading category…
+          <Spinner className="size-5 text-primary" aria-label={t('Loading budget')} />
+          {t('Loading category…')}
         </div>
       </section>
     );
@@ -95,10 +95,10 @@ export function CategoryDetailsPage() {
         budgetId={budgetId}
         message={
           budgetQuery.error instanceof Error
-            ? budgetQuery.error.message
+            ? t(budgetQuery.error.message)
             : !budgetId
-              ? 'Budget not found.'
-              : 'Unable to load budget.'
+            ? t('Budget not found.')
+            : t('Unable to load budget.')
         }
       />
     );
@@ -109,7 +109,7 @@ export function CategoryDetailsPage() {
     return (
       <CategoryPageError
         budgetId={budgetId}
-        message={categoryId ? 'Category not found in this budget.' : 'Category not found.'}
+        message={categoryId ? t('Category not found in this budget.') : t('Category not found.')}
       />
     );
   }
@@ -126,14 +126,14 @@ export function CategoryDetailsPage() {
 
       <header className="mt-6 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
         <div className="flex items-start gap-4">
-          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#eee8fb] text-[#6d43e5]">
+          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#f8f8f8] text-[#4b5563]">
             <CircleDollarSign size={22} />
           </span>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#8a7aa9]">
-              Category details
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#737373]">
+              {t('Category details')}
             </p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#241c3b]">
+            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#262626]">
               {category.name}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">{budget.name}</p>
@@ -141,23 +141,24 @@ export function CategoryDetailsPage() {
         </div>
         <div className="mt-7 grid grid-cols-1 gap-5 border-t border-border pt-5 sm:grid-cols-3">
           <div>
-            <p className="text-sm text-muted-foreground">Planned</p>
+            <p className="text-sm text-muted-foreground">{t('Planned')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatMoney(category.plannedAmount, budget.currency)}
+              {formatMoney(category.plannedAmount, budget.currency, locale)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Spent</p>
+            <p className="text-sm text-muted-foreground">{t('Spent')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatMoney(category.spentAmount, budget.currency)}
+              {formatMoney(category.spentAmount, budget.currency, locale)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Remaining</p>
+            <p className="text-sm text-muted-foreground">{t('Remaining')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
               {formatMoney(
                 Number(category.plannedAmount) - Number(category.spentAmount),
                 budget.currency,
+                locale,
               )}
             </p>
           </div>
@@ -168,12 +169,12 @@ export function CategoryDetailsPage() {
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-              Expenses
+              {t('Expenses')}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">All expenses in this category.</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t('All expenses in this category.')}</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-[#f1eef8] px-3 py-1 text-sm font-semibold text-[#6d43e5]">
+            <span className="rounded-full bg-[#f8f8f8] px-3 py-1 text-sm font-semibold text-[#4b5563]">
               {expensesQuery.data?.length ?? 0}
             </span>
             <Button
@@ -183,15 +184,15 @@ export function CategoryDetailsPage() {
               }}
             >
               <Plus />
-              Add expense
+              {t('Add expense')}
             </Button>
           </div>
         </div>
 
         {expensesQuery.isPending ? (
           <div className="mt-4 flex min-h-40 items-center justify-center gap-3 rounded-xl border border-border bg-white text-sm font-medium text-muted-foreground shadow-sm">
-            <Spinner className="size-5 text-primary" aria-label="Loading expenses" />
-            Loading expenses…
+            <Spinner className="size-5 text-primary" aria-label={t('Loading expenses')} />
+            {t('Loading expenses…')}
           </div>
         ) : expensesQuery.isError ? (
           <p
@@ -199,8 +200,8 @@ export function CategoryDetailsPage() {
             className="mt-4 rounded-xl border border-border bg-white p-6 text-sm font-medium text-destructive shadow-sm"
           >
             {expensesQuery.error instanceof Error
-              ? expensesQuery.error.message
-              : 'Unable to load expenses.'}
+              ? t(expensesQuery.error.message)
+              : t('Unable to load expenses.')}
           </p>
         ) : expensesQuery.data.length > 0 ? (
           <div className="mt-4 divide-y divide-border rounded-xl border border-border bg-white shadow-sm">
@@ -210,22 +211,22 @@ export function CategoryDetailsPage() {
                 className="flex flex-wrap items-center justify-between gap-3 p-5"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f4f1fa] text-[#7650e8]">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f8f8f8] text-[#6b7280]">
                     <ReceiptText className="size-5" />
                   </span>
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">
-                      {expense.note || 'Expense'}
+                      {expense.note || t('Expense')}
                     </p>
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
                       <CalendarDays className="size-4" />
-                      {formatDate(expense.spentAt)}
+                      {formatDate(expense.spentAt, locale)}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <p className="font-display text-lg font-semibold text-foreground">
-                    {formatMoney(expense.amount, budget.currency)}
+                    {formatMoney(expense.amount, budget.currency, locale)}
                   </p>
                   <Button
                     type="button"
@@ -236,7 +237,7 @@ export function CategoryDetailsPage() {
                       setEditingExpense(expense);
                       setExpenseFormOpen(true);
                     }}
-                    aria-label={`Edit expense ${expense.note || formatDate(expense.spentAt)}`}
+                    aria-label={`${t('Edit expense')} ${expense.note || formatDate(expense.spentAt, locale)}`}
                   >
                     <Pencil />
                   </Button>
@@ -248,7 +249,7 @@ export function CategoryDetailsPage() {
                       deleteMutation.reset();
                       setDeletingExpense(expense);
                     }}
-                    aria-label={`Delete expense ${expense.note || formatDate(expense.spentAt)}`}
+                    aria-label={`${t('Delete expense')} ${expense.note || formatDate(expense.spentAt, locale)}`}
                   >
                     <Trash2 />
                   </Button>
@@ -260,10 +261,10 @@ export function CategoryDetailsPage() {
           <div className="mt-4 rounded-xl border border-dashed border-border bg-white px-6 py-12 text-center">
             <ReceiptText className="mx-auto size-9 text-muted-foreground" />
             <h3 className="mt-3 font-display text-lg font-semibold text-foreground">
-              No expenses yet
+              {t('No expenses yet')}
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Expenses for this category will appear here once they are added.
+              {t('Expenses for this category will appear here once they are added.')}
             </p>
           </div>
         )}
@@ -292,16 +293,16 @@ export function CategoryDetailsPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete expense?</DialogTitle>
+            <DialogTitle>{t('Delete expense?')}</DialogTitle>
             <DialogDescription>
-              This expense will be permanently removed from the category.
+              {t('This expense will be permanently removed from the category.')}
             </DialogDescription>
           </DialogHeader>
           {deleteMutation.isError ? (
             <p role="alert" className="mb-4 text-sm font-medium text-destructive">
               {deleteMutation.error instanceof Error
-                ? deleteMutation.error.message
-                : 'Unable to delete expense.'}
+                ? t(deleteMutation.error.message)
+                : t('Unable to delete expense.')}
             </p>
           ) : null}
           <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
@@ -311,7 +312,7 @@ export function CategoryDetailsPage() {
               onClick={() => setDeletingExpense(undefined)}
               disabled={deleteMutation.isPending}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               type="button"
@@ -322,12 +323,12 @@ export function CategoryDetailsPage() {
               {deleteMutation.isPending ? (
                 <>
                   <Spinner />
-                  Deleting…
+                  {t('Deleting…')}
                 </>
               ) : (
                 <>
                   <Trash2 />
-                  Delete expense
+                  {t('Delete expense')}
                 </>
               )}
             </Button>
@@ -339,6 +340,7 @@ export function CategoryDetailsPage() {
 }
 
 function CategoryPageError({ budgetId, message }: { budgetId?: string; message: string }) {
+  const { t } = useTranslation();
   return (
     <section className="mx-auto max-w-5xl">
       <Link
@@ -346,7 +348,7 @@ function CategoryPageError({ budgetId, message }: { budgetId?: string; message: 
         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
-        {budgetId ? 'Budget details' : 'All budgets'}
+        {t(budgetId ? 'Budget details' : 'All budgets')}
       </Link>
       <p
         role="alert"

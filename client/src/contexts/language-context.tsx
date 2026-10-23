@@ -1,0 +1,225 @@
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+
+export type Language = 'ru' | 'en';
+
+const russianTranslations: Record<string, string> = {
+  'Welcome back': 'С возвращением',
+  'Get started': 'Начните работу',
+  'Sign in to your workspace': 'Войдите в рабочее пространство',
+  'Create your account': 'Создайте аккаунт',
+  'Enter your details to continue where you left off.': 'Введите данные, чтобы продолжить с того места, где остановились.',
+  'Start building better ideas with your team today.': 'Начните воплощать идеи вместе с командой уже сегодня.',
+  'Password updated. Sign in with your new password.': 'Пароль обновлён. Войдите с новым паролем.',
+  'Email address': 'Электронная почта',
+  Password: 'Пароль',
+  'Confirm password': 'Подтвердите пароль',
+  'Hide password': 'Скрыть пароль',
+  'Show password': 'Показать пароль',
+  'Forgot password?': 'Забыли пароль?',
+  'By creating an account, you agree to our Terms and Privacy Policy.': 'Создавая аккаунт, вы принимаете условия использования и политику конфиденциальности.',
+  'Signing in…': 'Входим…',
+  'Sign in': 'Войти',
+  'Creating account…': 'Создаём аккаунт…',
+  'Create account': 'Создать аккаунт',
+  "Don't have an account?": 'Нет аккаунта?',
+  'Already have an account?': 'Уже есть аккаунт?',
+  'Create one': 'Создать',
+  'Password recovery': 'Восстановление пароля',
+  'Forgot your password?': 'Забыли пароль?',
+  'Choose a new password': 'Придумайте новый пароль',
+  'Enter your account email and we will send you a password reset link.': 'Укажите почту аккаунта — мы отправим ссылку для сброса пароля.',
+  'Your new password must be at least 8 characters long.': 'Новый пароль должен содержать не менее 8 символов.',
+  'If an account with that email exists, a password reset link has been sent.': 'Если аккаунт с такой почтой существует, ссылка для сброса пароля отправлена.',
+  'Back to sign in': 'Вернуться ко входу',
+  'New password': 'Новый пароль',
+  'Confirm new password': 'Подтвердите новый пароль',
+  'Please wait…': 'Подождите…',
+  'Send reset link': 'Отправить ссылку',
+  'Reset password': 'Сбросить пароль',
+  'Remember your password?': 'Вспомнили пароль?',
+  'Planning': 'Планирование',
+  Budgets: 'Бюджеты',
+  'All your budgeting periods in one place.': 'Все ваши бюджетные периоды в одном месте.',
+  'Loading budgets…': 'Загружаем бюджеты…',
+  'Loading budgets': 'Загрузка бюджетов',
+  'Unable to load budgets.': 'Не удалось загрузить бюджеты.',
+  'No budgets yet': 'Пока нет бюджетов',
+  'Your budgets will appear here once they are created.': 'Созданные бюджеты появятся здесь.',
+  'Actions for': 'Действия для',
+  Edit: 'Изменить',
+  Delete: 'Удалить',
+  Active: 'Активен',
+  Archived: 'В архиве',
+  'Start date': 'Дата начала',
+  'End date': 'Дата окончания',
+  'Delete budget?': 'Удалить бюджет?',
+  'will be archived and remain available in your budget history.': 'будет архивирован и останется доступен в истории бюджетов.',
+  Cancel: 'Отмена',
+  'Deleting…': 'Удаляем…',
+  'Delete budget': 'Удалить бюджет',
+  'Unable to delete budget.': 'Не удалось удалить бюджет.',
+  'Create budget': 'Создать бюджет',
+  'Edit budget': 'Изменить бюджет',
+  'Update the name, period or starting amount for your budget.': 'Измените название, период или начальную сумму бюджета.',
+  'Set a name, period and starting amount for your budget.': 'Укажите название, период и начальную сумму бюджета.',
+  'Budget name': 'Название бюджета',
+  'e.g. Monthly budget': 'Например, бюджет на месяц',
+  'Starting amount': 'Начальная сумма',
+  Currency: 'Валюта',
+  'RUB — Ruble': 'RUB — российский рубль',
+  'USD — US Dollar': 'USD — доллар США',
+  'EUR — Euro': 'EUR — евро',
+  'Creating…': 'Создаём…',
+  'Saving…': 'Сохраняем…',
+  'Save changes': 'Сохранить изменения',
+  'Create a budget': 'Создать бюджет',
+  'Create a category': 'Создать категорию',
+  'Planned amount': 'Запланированная сумма',
+  'Category name': 'Название категории',
+  'e.g. Groceries': 'Например, продукты',
+  'Update the category name or planned amount.': 'Измените название категории или запланированную сумму.',
+  'Add a category and its planned spending amount to this budget.': 'Добавьте категорию и запланированную сумму расходов в этот бюджет.',
+  'Unable to create budget.': 'Не удалось создать бюджет.',
+  'Unable to update budget.': 'Не удалось обновить бюджет.',
+  'Budget details': 'Детали бюджета',
+  'All budgets': 'Все бюджеты',
+  'Loading budget…': 'Загружаем бюджет…',
+  'Loading budget': 'Загрузка бюджета',
+  'Budget not found.': 'Бюджет не найден.',
+  'Category not found.': 'Категория не найдена.',
+  'Category not found in this budget.': 'Категория не найдена в этом бюджете.',
+  'Expense not found.': 'Расход не найден.',
+  'Unable to load budget.': 'Не удалось загрузить бюджет.',
+  Inactive: 'Неактивен',
+  'Budget period': 'Период бюджета',
+  Planned: 'Запланировано',
+  Spent: 'Потрачено',
+  spent: 'потрачено',
+  Remaining: 'Остаток',
+  'Budget spent': 'Расходы по бюджету',
+  'Budget categories': 'Категории бюджета',
+  'Spending and planned amounts for this period.': 'Расходы и запланированные суммы за этот период.',
+  'Create category': 'Создать категорию',
+  'Open expenses': 'Открыть расходы',
+  'Edit category': 'Изменить категорию',
+  'Delete category': 'Удалить категорию',
+  'No categories yet': 'Пока нет категорий',
+  'Categories for this budget will appear here once they are added.': 'Добавленные категории бюджета появятся здесь.',
+  'Delete category?': 'Удалить категорию?',
+  'will be removed from this budget. Categories with expenses cannot be deleted.': 'будет удалена из бюджета. Категории с расходами удалить нельзя.',
+  'Unable to delete category.': 'Не удалось удалить категорию.',
+  'Unable to create category.': 'Не удалось создать категорию.',
+  'Unable to update category.': 'Не удалось обновить категорию.',
+  'Category details': 'Детали категории',
+  Expenses: 'Расходы',
+  'All expenses in this category.': 'Все расходы в этой категории.',
+  'Add expense': 'Добавить расход',
+  'Loading category…': 'Загружаем категорию…',
+  'Loading expenses…': 'Загружаем расходы…',
+  'Loading expenses': 'Загрузка расходов',
+  'Unable to load expenses.': 'Не удалось загрузить расходы.',
+  Expense: 'Расход',
+  'No expenses yet': 'Пока нет расходов',
+  'Expenses for this category will appear here once they are added.': 'Добавленные расходы появятся здесь.',
+  'Delete expense?': 'Удалить расход?',
+  'Delete expense': 'Удалить расход',
+  'This expense will be permanently removed from the category.': 'Этот расход будет удалён из категории без возможности восстановления.',
+  'Unable to delete expense.': 'Не удалось удалить расход.',
+  'Edit expense': 'Изменить расход',
+  'Add an expense': 'Добавить расход',
+  'Update the expense amount, date, or note.': 'Измените сумму, дату или комментарий к расходу.',
+  'Record a new expense in this category.': 'Добавьте новый расход в эту категорию.',
+  Amount: 'Сумма',
+  Date: 'Дата',
+  Note: 'Комментарий',
+  'What was this expense for?': 'На что потратили?',
+  'Unable to create expense.': 'Не удалось создать расход.',
+  'Unable to update expense.': 'Не удалось обновить расход.',
+  'Workspace': 'Рабочее пространство',
+  Dashboard: 'Главная',
+  Welcome: 'Добро пожаловать',
+  'Welcome to Layered.': 'Добро пожаловать в Layered.',
+  'This is the starting point for the shared application layout and your future workspace modules.': 'Здесь находится основа приложения и будущих модулей рабочего пространства.',
+  'Invalid email or password': 'Неверная почта или пароль',
+  'Email already registered': 'Эта почта уже зарегистрирована',
+  'Authentication required': 'Требуется авторизация',
+  'Budget not found': 'Бюджет не найден',
+  'Category not found': 'Категория не найдена',
+  'Expense not found': 'Расход не найден',
+  'Archived budget cannot be active': 'Архивный бюджет нельзя сделать активным',
+  'A category with this name already exists': 'Категория с таким названием уже существует',
+  'At least one field is required': 'Необходимо заполнить хотя бы одно поле',
+  'Request data is invalid': 'Данные запроса некорректны',
+  'Request body is not valid JSON': 'Тело запроса содержит некорректный JSON',
+  'Internal server error': 'Внутренняя ошибка сервера',
+  'If an account with that email exists, a reset link has been sent.': 'Если аккаунт с такой почтой существует, ссылка для сброса пароля отправлена.',
+  'Sign out': 'Выйти',
+  'Unable to sign out.': 'Не удалось выйти из аккаунта.',
+  'Unable to complete the request.': 'Не удалось выполнить запрос.',
+  'Enter a category name': 'Введите название категории',
+  'Maximum 100 characters': 'Максимум 100 символов',
+  'Enter a budget name': 'Введите название бюджета',
+  'Enter a valid start date': 'Введите корректную дату начала',
+  'Enter a valid end date': 'Введите корректную дату окончания',
+  'Enter a whole amount': 'Введите сумму целым числом',
+  'Enter an amount': 'Введите сумму',
+  'Enter a valid amount': 'Введите корректную сумму',
+  'Amount cannot be negative': 'Сумма не может быть отрицательной',
+  'Amount is too large': 'Сумма слишком велика',
+  'End date must not be before start date': 'Дата окончания не может быть раньше даты начала',
+  'Amount must be greater than zero': 'Сумма должна быть больше нуля',
+  'Maximum 500 characters': 'Максимум 500 символов',
+  'Date must be within the budget period': 'Дата должна входить в период бюджета',
+  'Enter a valid email address': 'Введите корректный адрес электронной почты',
+  'Password must be at least 8 characters': 'Пароль должен содержать не менее 8 символов',
+  'Passwords must match': 'Пароли должны совпадать',
+  'The password reset link is invalid or expired.': 'Ссылка для восстановления недействительна или устарела.',
+  'Language': 'Язык',
+  'Ruble': 'Российский рубль',
+  'US Dollar': 'Доллар США',
+  Euro: 'Евро',
+};
+
+type LanguageContextValue = {
+  language: Language;
+  locale: string;
+  setLanguage: (language: Language) => void;
+  t: (text: string) => string;
+};
+
+const LanguageContext = createContext<LanguageContextValue | null>(null);
+
+function getInitialLanguage(): Language {
+  const storedLanguage = window.localStorage.getItem('layered-language');
+  if (storedLanguage === 'ru' || storedLanguage === 'en') return storedLanguage;
+  return navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en';
+}
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguage] = useState<Language>(getInitialLanguage);
+
+  useEffect(() => {
+    window.localStorage.setItem('layered-language', language);
+    document.documentElement.lang = language;
+    document.title = language === 'ru' ? 'Layered — бюджеты' : 'Layered — budgets';
+  }, [language]);
+
+  const value = useMemo<LanguageContextValue>(
+    () => ({
+      language,
+      locale: language === 'ru' ? 'ru-RU' : 'en-US',
+      setLanguage,
+      t: (text) => (language === 'ru' ? (russianTranslations[text] ?? text) : text),
+    }),
+    [language],
+  );
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+}
+
+export function useTranslation() {
+  const context = useContext(LanguageContext);
+  if (!context) throw new Error('useTranslation must be used within LanguageProvider');
+  return context;
+}

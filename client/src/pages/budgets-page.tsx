@@ -14,22 +14,23 @@ import {
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
 import { deleteBudget, getBudgets, type Budget } from '../lib/budget-api';
+import { useAuth } from '../hooks/use-auth';
+import { useTranslation } from '../contexts/language-context';
 
-const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-});
-
-function formatDate(date: string) {
-  return dateFormatter.format(new Date(`${date}T00:00:00`));
+function formatDate(date: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(`${date}T00:00:00`));
 }
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unable to delete budget.';
+function getErrorMessage(error: unknown, t: (text: string) => string) {
+  return error instanceof Error ? t(error.message) : t('Unable to delete budget.');
 }
 
 function BudgetCard({ budget }: { budget: Budget }) {
+  const { t, locale } = useTranslation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -45,10 +46,10 @@ function BudgetCard({ budget }: { budget: Budget }) {
   });
 
   return (
-    <article className="relative flex flex-col rounded-xl border border-border bg-white p-5 shadow-sm transition-colors hover:border-violet-300 focus-within:ring-2 focus-within:ring-ring">
+    <article className="relative flex flex-col rounded-xl border border-border bg-white p-5 shadow-sm transition-colors hover:border-gray-300 focus-within:ring-2 focus-within:ring-ring">
       <Menu.Root>
         <Menu.Trigger
-          aria-label={`Actions for ${budget.name}`}
+          aria-label={`${t('Actions for')} ${budget.name}`}
           render={<Button variant="ghost" size="icon-sm" className="absolute right-3 top-3" />}
         >
           <Ellipsis aria-hidden="true" />
@@ -61,7 +62,7 @@ function BudgetCard({ budget }: { budget: Budget }) {
                 className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
               >
                 <Pencil className="size-4" aria-hidden="true" />
-                Edit
+                {t('Edit')}
               </Menu.Item>
               <Menu.Item
                 onClick={() => {
@@ -71,7 +72,7 @@ function BudgetCard({ budget }: { budget: Budget }) {
                 className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none data-highlighted:bg-destructive/10"
               >
                 <Trash2 className="size-4" aria-hidden="true" />
-                Delete
+                {t('Delete')}
               </Menu.Item>
             </Menu.Popup>
           </Menu.Positioner>
@@ -95,12 +96,12 @@ function BudgetCard({ budget }: { budget: Budget }) {
               {budget.name}
             </h2>
             {budget.isActive ? (
-              <span className="mt-2 inline-flex rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700">
-                Active
+              <span className="mt-2 inline-flex rounded-full bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                {t('Active')}
               </span>
             ) : budget.status === 'archived' ? (
               <span className="mt-2 inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                Archived
+                {t('Archived')}
               </span>
             ) : null}
           </div>
@@ -108,12 +109,12 @@ function BudgetCard({ budget }: { budget: Budget }) {
 
         <dl className="flex justify-between mt-12 gap-4 border-t border-border pt-4 text-sm">
           <div>
-            <dt className="text-muted-foreground">Start date</dt>
-            <dd className="mt-1 font-medium text-foreground">{formatDate(budget.startDate)}</dd>
+            <dt className="text-muted-foreground">{t('Start date')}</dt>
+            <dd className="mt-1 font-medium text-foreground">{formatDate(budget.startDate, locale)}</dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">End date</dt>
-            <dd className="mt-1 font-medium text-foreground">{formatDate(budget.endDate)}</dd>
+            <dt className="text-muted-foreground">{t('End date')}</dt>
+            <dd className="mt-1 font-medium text-foreground">{formatDate(budget.endDate, locale)}</dd>
           </div>
         </dl>
       </Link>
@@ -127,14 +128,14 @@ function BudgetCard({ budget }: { budget: Budget }) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete budget?</DialogTitle>
+            <DialogTitle>{t('Delete budget?')}</DialogTitle>
             <DialogDescription>
-              “{budget.name}” will be archived and remain available in your budget history.
+                “{budget.name}” {t('will be archived and remain available in your budget history.')}
             </DialogDescription>
           </DialogHeader>
           {deleteMutation.isError ? (
             <p role="alert" className="mb-4 text-sm font-medium text-destructive">
-              {getErrorMessage(deleteMutation.error)}
+              {getErrorMessage(deleteMutation.error, t)}
             </p>
           ) : null}
           <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
@@ -144,7 +145,7 @@ function BudgetCard({ budget }: { budget: Budget }) {
               onClick={() => setDeleteDialogOpen(false)}
               disabled={deleteMutation.isPending}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               type="button"
@@ -155,12 +156,12 @@ function BudgetCard({ budget }: { budget: Budget }) {
               {deleteMutation.isPending ? (
                 <>
                   <Spinner />
-                  Deleting…
+                  {t('Deleting…')}
                 </>
               ) : (
                 <>
                   <Trash2 />
-                  Delete budget
+                  {t('Delete budget')}
                 </>
               )}
             </Button>
@@ -172,27 +173,30 @@ function BudgetCard({ budget }: { budget: Budget }) {
 }
 
 export function BudgetsPage() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
   const budgetsQuery = useQuery({
-    queryKey: ['budgets'],
-    queryFn: getBudgets,
+    queryKey: ['budgets', user?.id],
+    queryFn: ({ signal }) => getBudgets(signal),
+    enabled: user !== null,
   });
 
   return (
     <section className="mx-auto max-w-5xl">
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="flex items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#eee8fb] text-[#6d43e5]">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#f8f8f8] text-[#4b5563]">
             <WalletCards size={21} />
           </span>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#8a7aa9]">
-              Planning
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#737373]">
+              {t('Planning')}
             </p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#241c3b]">
-              Budgets
+            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#262626]">
+              {t('Budgets')}
             </h1>
-            <p className="mt-2 text-sm leading-6 text-[#888198]">
-              All your budgeting periods in one place.
+            <p className="mt-2 text-sm leading-6 text-[#737373]">
+              {t('All your budgeting periods in one place.')}
             </p>
           </div>
         </div>
@@ -202,8 +206,8 @@ export function BudgetsPage() {
       <div className="mt-8">
         {budgetsQuery.isPending ? (
           <div className="flex min-h-64 items-center justify-center gap-3 rounded-xl border border-border bg-card text-sm font-medium text-muted-foreground shadow-sm">
-            <Spinner className="size-5 text-primary" aria-label="Loading budgets" />
-            Loading budgets…
+            <Spinner className="size-5 text-primary" aria-label={t('Loading budgets')} />
+            {t('Loading budgets…')}
           </div>
         ) : null}
 
@@ -213,8 +217,8 @@ export function BudgetsPage() {
             className="rounded-xl border border-border bg-card p-6 text-sm font-medium text-destructive shadow-sm"
           >
             {budgetsQuery.error instanceof Error
-              ? budgetsQuery.error.message
-              : 'Unable to load budgets.'}
+              ? t(budgetsQuery.error.message)
+              : t('Unable to load budgets.')}
           </p>
         ) : null}
 
@@ -222,10 +226,10 @@ export function BudgetsPage() {
           <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-border bg-card px-6 text-center shadow-sm">
             <CalendarDays className="size-9 text-muted-foreground" />
             <h2 className="mt-4 font-display text-xl font-semibold text-foreground">
-              No budgets yet
+              {t('No budgets yet')}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Your budgets will appear here once they are created.
+              {t('Your budgets will appear here once they are created.')}
             </p>
           </div>
         ) : null}

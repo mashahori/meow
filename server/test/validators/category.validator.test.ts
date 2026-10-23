@@ -6,21 +6,21 @@ import {
 } from "../../src/validators/category.validator";
 
 describe("category validators", () => {
-  it("trims category names and accepts decimal string amounts", () => {
+  it("trims category names and accepts whole-number amounts", () => {
     expect(
       validateCreateCategoryPayload({
         name: "  Groceries  ",
-        plannedAmount: "26000.00",
+        plannedAmount: "26000",
       }),
-    ).toEqual({ name: "Groceries", plannedAmount: "26000.00" });
+    ).toEqual({ name: "Groceries", plannedAmount: "26000" });
   });
 
   it.each([
-    { name: "", plannedAmount: "100.00" },
-    { name: "Groceries", plannedAmount: "-1.00" },
-    { name: "Groceries", plannedAmount: "1.001" },
+    { name: "", plannedAmount: "100" },
+    { name: "Groceries", plannedAmount: "-1" },
+    { name: "Groceries", plannedAmount: "1.01" },
     { name: "Groceries", plannedAmount: 100 },
-    { name: "Groceries", plannedAmount: "10000000000.00" },
+    { name: "Groceries", plannedAmount: "10000000000" },
     { name: "Groceries", plannedAmount: "0", extra: true },
   ])("rejects invalid create payload %#", (body) => {
     expect(() => validateCreateCategoryPayload(body)).toThrow();

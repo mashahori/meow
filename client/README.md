@@ -14,6 +14,10 @@ The React Compiler is enabled on this template. See [this documentation](https:/
 Note: This will impact Vite dev & build performances.
 You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
 
+## Tests
+
+Run the frontend unit tests with `npm test`. The Vitest suite covers the shared API client and the authentication, budget, and expense API modules.
+
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:

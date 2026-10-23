@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS categories (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   budget_id uuid NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
   name varchar(100) NOT NULL,
-  planned_amount numeric(12, 2) NOT NULL DEFAULT 0
+  planned_amount numeric(12, 0) NOT NULL DEFAULT 0
     CHECK (planned_amount >= 0),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS expenses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   budget_id uuid NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
   category_id uuid NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
-  amount numeric(12, 2) NOT NULL CHECK (amount > 0),
+  amount numeric(12, 0) NOT NULL CHECK (amount > 0),
   spent_at date NOT NULL,
   note varchar(500),
   created_at timestamptz NOT NULL DEFAULT now(),

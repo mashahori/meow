@@ -19,7 +19,7 @@
 | name           | varchar(100)  | not null              |
 | start_date     | date          | not null              |
 | end_date       | date          | not null              |
-| initial_amount | numeric(12,2) | not null, >= 0        |
+| initial_amount | numeric(12,0) | not null, >= 0        |
 | currency       | char(3)       | FK -> currencies.code |
 | status         | varchar(20)   | active / archived     |
 | created_at     | timestamp     | not null              |
@@ -35,6 +35,10 @@
 
 Начальные записи справочника: `RUB`, `USD`, `EUR`.
 
+Денежные суммы хранятся в целых единицах валюты. Миграция 006 округляет ранее
+сохранённые значения до ближайшего целого; расходы, которые округлились бы до
+нуля, сохраняются как 1, чтобы расход оставался положительным.
+
 ## Category
 
 | Поле           | Тип           | Ограничения      |
@@ -42,7 +46,7 @@
 | id             | UUID          | primary key      |
 | budget_id      | UUID          | FK -> budgets.id |
 | name           | varchar(100)  | not null         |
-| planned_amount | numeric(12,2) | >= 0             |
+| planned_amount | numeric(12,0) | >= 0             |
 | created_at     | timestamp     | not null         |
 | updated_at     | timestamp     | not null         |
 
@@ -55,7 +59,7 @@
 | id          | UUID          | primary key         |
 | budget_id   | UUID          | FK -> budgets.id    |
 | category_id | UUID          | FK -> categories.id |
-| amount      | numeric(12,2) | > 0                 |
+| amount      | numeric(12,0) | > 0                 |
 | spent_at    | date          | not null            |
 | note        | varchar(500)  | nullable            |
 | created_at  | timestamp     | not null            |

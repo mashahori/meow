@@ -2,6 +2,8 @@ import { Layers3, LogOut, WalletCards } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/use-auth'
+import { useTranslation } from '../contexts/language-context'
+import { LanguageSwitcher } from './language-switcher'
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +24,7 @@ const navigation = [
 ]
 
 export function AppSidebar() {
+  const { t } = useTranslation()
   const { user, signOut } = useAuth()
   const { isMobile, setOpenMobile } = useSidebar()
   const location = useLocation()
@@ -34,7 +37,7 @@ export function AppSidebar() {
       await signOut()
       navigate('/login')
     } catch (error) {
-      setSignOutError(error instanceof Error ? error.message : 'Unable to sign out.')
+      setSignOutError(error instanceof Error ? t(error.message) : t('Unable to sign out.'))
     }
   }
 
@@ -53,7 +56,7 @@ export function AppSidebar() {
 
       <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('Workspace')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigation.map(({ title, url, icon: Icon }) => (
@@ -61,13 +64,13 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     isActive={location.pathname === url || location.pathname.startsWith(`${url}/`)}
                     render={<NavLink to={url} />}
-                    tooltip={title}
+                    tooltip={t(title)}
                     onClick={() => {
                       if (isMobile) setOpenMobile(false)
                     }}
                   >
                     <Icon />
-                    <span>{title}</span>
+                    <span>{t(title)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -77,6 +80,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="gap-2 border-t border-sidebar-border p-4">
+        <LanguageSwitcher />
         <p className="truncate px-2 text-sm text-muted-foreground">{user?.email}</p>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -85,10 +89,10 @@ export function AppSidebar() {
                 if (isMobile) setOpenMobile(false)
                 void handleSignOut()
               }}
-              tooltip="Sign out"
+              tooltip={t('Sign out')}
             >
               <LogOut />
-              <span>Sign out</span>
+              <span>{t('Sign out')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

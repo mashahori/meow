@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ApiError } from './auth-api';
+import { requestJson, requestVoid } from './api-client';
 
 const budgetSchema = z.object({
   id: z.string().uuid(),
@@ -32,12 +32,6 @@ const budgetDetailsSchema = budgetSchema.extend({
 });
 
 const budgetsResponseSchema = z.object({ items: z.array(budgetSchema) });
-const apiErrorSchema = z.object({
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-  }),
-});
 
 export type Budget = z.infer<typeof budgetSchema>;
 export type BudgetDetails = z.infer<typeof budgetDetailsSchema>;
@@ -56,258 +50,73 @@ export type CreateBudgetPayload = {
 };
 export type UpdateBudgetPayload = CreateBudgetPayload;
 
-const apiBaseUrl = (import.meta.env.DEV ? '' : import.meta.env.VITE_API_URL || '').replace(
-  /\/+$/,
-  '',
-);
-
-export async function getBudgets(): Promise<Budget[]> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${apiBaseUrl}/api/budgets`, {
-      credentials: 'include',
-    });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json();
-    const parsedError = apiErrorSchema.safeParse(payload);
-    throw new ApiError(
-      parsedError.success
-        ? parsedError.data.error.message
-        : `Unable to load budgets (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    );
-  }
-
-  return budgetsResponseSchema.parse(await response.json()).items;
+function postJson(body: unknown): RequestInit {
+  return {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  };
 }
 
-export async function getBudgetDetails(budgetId: string): Promise<BudgetDetails> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${apiBaseUrl}/api/budgets/${budgetId}`, {
-      credentials: 'include',
-    });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json();
-    const parsedError = apiErrorSchema.safeParse(payload);
-    throw new ApiError(
-      parsedError.success
-        ? parsedError.data.error.message
-        : `Unable to load budget (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    );
-  }
-
-  return budgetDetailsSchema.parse(await response.json());
+function patchJson(body: unknown): RequestInit {
+  return {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  };
 }
 
-export async function createBudget(payload: CreateBudgetPayload): Promise<Budget> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${apiBaseUrl}/api/budgets`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json();
-    const parsedError = apiErrorSchema.safeParse(payload);
-    throw new ApiError(
-      parsedError.success
-        ? parsedError.data.error.message
-        : `Unable to create budget (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    );
-  }
-
-  return budgetSchema.parse(await response.json());
+export function getBudgets(signal?: AbortSignal): Promise<Budget[]> {
+  return requestJson('/api/budgets', budgetsResponseSchema, 'Unable to load budgets', {
+    signal,
+  }).then(({ items }) => items);
 }
 
-export async function updateBudget(
-  budgetId: string,
-  payload: UpdateBudgetPayload,
-): Promise<Budget> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${apiBaseUrl}/api/budgets/${budgetId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json();
-    const parsedError = apiErrorSchema.safeParse(payload);
-    throw new ApiError(
-      parsedError.success
-        ? parsedError.data.error.message
-        : `Unable to update budget (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    );
-  }
-
-  return budgetSchema.parse(await response.json());
+export function getBudgetDetails(budgetId: string, signal?: AbortSignal): Promise<BudgetDetails> {
+  return requestJson(`/api/budgets/${budgetId}`, budgetDetailsSchema, 'Unable to load budget', {
+    signal,
+  });
 }
 
-export async function deleteBudget(budgetId: string): Promise<void> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${apiBaseUrl}/api/budgets/${budgetId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json();
-    const parsedError = apiErrorSchema.safeParse(payload);
-    throw new ApiError(
-      parsedError.success
-        ? parsedError.data.error.message
-        : `Unable to delete budget (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    );
-  }
+export function createBudget(payload: CreateBudgetPayload): Promise<Budget> {
+  return requestJson('/api/budgets', budgetSchema, 'Unable to create budget', postJson(payload));
 }
 
-export async function createCategory(
-  budgetId: string,
-  payload: CategoryPayload,
-): Promise<Category> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${apiBaseUrl}/api/budgets/${budgetId}/categories`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json();
-    const parsedError = apiErrorSchema.safeParse(payload);
-    throw new ApiError(
-      parsedError.success
-        ? parsedError.data.error.message
-        : `Unable to create category (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    );
-  }
-
-  return categorySchema.parse(await response.json());
+export function updateBudget(budgetId: string, payload: UpdateBudgetPayload): Promise<Budget> {
+  return requestJson(
+    `/api/budgets/${budgetId}`,
+    budgetSchema,
+    'Unable to update budget',
+    patchJson(payload),
+  );
 }
 
-export async function updateCategory(
-  categoryId: string,
-  payload: CategoryPayload,
-): Promise<Category> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${apiBaseUrl}/api/categories/${categoryId}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json();
-    const parsedError = apiErrorSchema.safeParse(payload);
-    throw new ApiError(
-      parsedError.success
-        ? parsedError.data.error.message
-        : `Unable to update category (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    );
-  }
-
-  return categorySchema.parse(await response.json());
+export function deleteBudget(budgetId: string): Promise<void> {
+  return requestVoid(`/api/budgets/${budgetId}`, 'Unable to delete budget', {
+    method: 'DELETE',
+  });
 }
 
-export async function deleteCategory(categoryId: string): Promise<void> {
-  let response: Response;
+export function createCategory(budgetId: string, payload: CategoryPayload): Promise<Category> {
+  return requestJson(
+    `/api/budgets/${budgetId}/categories`,
+    categorySchema,
+    'Unable to create category',
+    postJson(payload),
+  );
+}
 
-  try {
-    response = await fetch(`${apiBaseUrl}/api/categories/${categoryId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
-    }
-    throw error;
-  }
+export function updateCategory(categoryId: string, payload: CategoryPayload): Promise<Category> {
+  return requestJson(
+    `/api/categories/${categoryId}`,
+    categorySchema,
+    'Unable to update category',
+    patchJson(payload),
+  );
+}
 
-  if (!response.ok) {
-    const payload: unknown = await response.json();
-    const parsedError = apiErrorSchema.safeParse(payload);
-    throw new ApiError(
-      parsedError.success
-        ? parsedError.data.error.message
-        : `Unable to delete category (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    );
-  }
+export function deleteCategory(categoryId: string): Promise<void> {
+  return requestVoid(`/api/categories/${categoryId}`, 'Unable to delete category', {
+    method: 'DELETE',
+  });
 }

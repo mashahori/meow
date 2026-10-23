@@ -8,10 +8,7 @@ const nameSchema = z
 
 const plannedAmountSchema = z
   .string()
-  .regex(
-    /^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/,
-    "Planned amount must be a non-negative amount with at most two decimal places",
-  );
+  .regex(/^(?:0|[1-9]\d{0,9})$/, "Planned amount must be a non-negative whole number");
 
 const createSchema = z
   .object({

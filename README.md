@@ -21,6 +21,7 @@ an authenticated REST API backed by PostgreSQL.
 - 🗂️ Organize planned amounts into categories.
 - 🧾 Add and manage expenses.
 - 📊 Review planned, spent, and remaining amounts.
+- 🌐 Switch the interface between Russian and English; the selected language is saved in the browser.
 - 🗄️ Manage the database schema with PostgreSQL migrations.
 - ☁️ Build and deploy with Docker on Amvera Cloud.
 

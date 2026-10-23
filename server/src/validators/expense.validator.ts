@@ -11,8 +11,8 @@ const dateSchema = z
 const amountSchema = z
   .string()
   .regex(
-    /^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/,
-    'Amount must be greater than zero with at most two decimal places',
+    /^(?:0|[1-9]\d{0,9})$/,
+    'Amount must be a whole number greater than zero',
   )
   .refine((value) => Number(value) > 0, 'Amount must be greater than zero');
 

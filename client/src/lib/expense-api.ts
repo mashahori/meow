@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ApiError } from './auth-api';
+import { requestJson, requestVoid } from './api-client';
 
 const expenseSchema = z.object({
   id: z.string().uuid(),
@@ -11,12 +11,6 @@ const expenseSchema = z.object({
 });
 
 const expensesResponseSchema = z.object({ items: z.array(expenseSchema) });
-const apiErrorSchema = z.object({
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-  }),
-});
 
 export type Expense = z.infer<typeof expenseSchema>;
 export type CreateExpensePayload = {
@@ -31,89 +25,43 @@ export type UpdateExpensePayload = {
   note: string | null;
 };
 
-const apiBaseUrl = (import.meta.env.DEV ? '' : import.meta.env.VITE_API_URL || '').replace(
-  /\/+$/,
-  '',
-);
+function jsonRequest(method: 'POST' | 'PATCH', body: unknown): RequestInit {
+  return {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  };
+}
 
-export async function getCategoryExpenses(categoryId: string): Promise<Expense[]> {
-  const response = await expenseRequest(
+export function getCategoryExpenses(categoryId: string, signal?: AbortSignal): Promise<Expense[]> {
+  return requestJson(
     `/api/categories/${categoryId}/expenses`,
-    { credentials: 'include' },
+    expensesResponseSchema,
     'Unable to load category expenses',
-  );
-  return expensesResponseSchema.parse(await response.json()).items;
+    { signal },
+  ).then(({ items }) => items);
 }
 
-export async function createExpense(
-  budgetId: string,
-  payload: CreateExpensePayload,
-): Promise<Expense> {
-  const response = await expenseRequest(
+export function createExpense(budgetId: string, payload: CreateExpensePayload): Promise<Expense> {
+  return requestJson(
     `/api/budgets/${budgetId}/expenses`,
-    {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    },
+    expenseSchema,
     'Unable to create expense',
+    jsonRequest('POST', payload),
   );
-  return expenseSchema.parse(await response.json());
 }
 
-export async function updateExpense(
-  expenseId: string,
-  payload: UpdateExpensePayload,
-): Promise<Expense> {
-  const response = await expenseRequest(
+export function updateExpense(expenseId: string, payload: UpdateExpensePayload): Promise<Expense> {
+  return requestJson(
     `/api/expenses/${expenseId}`,
-    {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    },
+    expenseSchema,
     'Unable to update expense',
-  );
-  return expenseSchema.parse(await response.json());
-}
-
-export async function deleteExpense(expenseId: string): Promise<void> {
-  await expenseRequest(
-    `/api/expenses/${expenseId}`,
-    { method: 'DELETE', credentials: 'include' },
-    'Unable to delete expense',
+    jsonRequest('PATCH', payload),
   );
 }
 
-async function expenseRequest(
-  path: string,
-  init: RequestInit,
-  errorMessage: string,
-): Promise<Response> {
-  let response: Response;
-
-  try {
-    response = await fetch(`${apiBaseUrl}${path}`, init);
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new ApiError('Unable to connect to the server. Please check that it is available.', 0);
-    }
-    throw error;
-  }
-
-  if (!response.ok) {
-    const payload: unknown = await response.json();
-    const parsedError = apiErrorSchema.safeParse(payload);
-    throw new ApiError(
-      parsedError.success
-        ? parsedError.data.error.message
-        : `${errorMessage} (${response.status}).`,
-      response.status,
-      parsedError.success ? parsedError.data.error.code : undefined,
-    );
-  }
-
-  return response;
+export function deleteExpense(expenseId: string): Promise<void> {
+  return requestVoid(`/api/expenses/${expenseId}`, 'Unable to delete expense', {
+    method: 'DELETE',
+  });
 }

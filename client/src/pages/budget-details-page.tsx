@@ -21,26 +21,26 @@ import {
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
 import { deleteCategory, getBudgetDetails, type BudgetCategory } from '../lib/budget-api';
+import { useTranslation } from '../contexts/language-context';
 
-const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-});
-
-function formatDate(date: string) {
-  return dateFormatter.format(new Date(`${date}T00:00:00`));
+function formatDate(date: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(`${date}T00:00:00`));
 }
 
-function formatMoney(amount: string | number, currency: string) {
-  return new Intl.NumberFormat('ru-RU', {
+function formatMoney(amount: string | number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   }).format(Number(amount));
 }
 
 export function BudgetDetailsPage() {
+  const { t, locale } = useTranslation();
   const { budgetId } = useParams();
   const [categoryFormOpen, setCategoryFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<BudgetCategory>();
@@ -48,15 +48,15 @@ export function BudgetDetailsPage() {
   const queryClient = useQueryClient();
   const budgetQuery = useQuery({
     queryKey: ['budget', budgetId],
-    queryFn: () => {
-      if (!budgetId) throw new Error('Budget not found.');
-      return getBudgetDetails(budgetId);
+    queryFn: ({ signal }) => {
+      if (!budgetId) throw new Error(t('Budget not found.'));
+      return getBudgetDetails(budgetId, signal);
     },
     enabled: Boolean(budgetId),
   });
   const deleteMutation = useMutation({
     mutationFn: () => {
-      if (!deletingCategory) throw new Error('Category not found.');
+      if (!deletingCategory) throw new Error(t('Category not found.'));
       return deleteCategory(deletingCategory.id);
     },
     onSuccess: async () => {
@@ -71,8 +71,8 @@ export function BudgetDetailsPage() {
     return (
       <section className="mx-auto max-w-5xl">
         <div className="flex min-h-64 items-center justify-center gap-3 rounded-xl border border-border bg-card text-sm font-medium text-muted-foreground shadow-sm">
-          <Spinner className="size-5 text-primary" aria-label="Loading budget" />
-          Loading budget…
+          <Spinner className="size-5 text-primary" aria-label={t('Loading budget')} />
+          {t('Loading budget…')}
         </div>
       </section>
     );
@@ -86,17 +86,17 @@ export function BudgetDetailsPage() {
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
-          All budgets
+          {t('All budgets')}
         </Link>
         <p
           role="alert"
           className="mt-6 rounded-xl border border-border bg-card p-6 text-sm font-medium text-destructive shadow-sm"
         >
           {!budgetId
-            ? 'Budget not found.'
+            ? t('Budget not found.')
             : budgetQuery.error instanceof Error
-              ? budgetQuery.error.message
-              : 'Unable to load budget.'}
+              ? t(budgetQuery.error.message)
+              : t('Unable to load budget.')}
         </p>
       </section>
     );
@@ -114,83 +114,83 @@ export function BudgetDetailsPage() {
         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
-        All budgets
+        {t('All budgets')}
       </Link>
 
       <header className="mt-6 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="flex items-start gap-4">
-            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#eee8fb] text-[#6d43e5]">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#f8f8f8] text-[#4b5563]">
               <WalletCards size={22} />
             </span>
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#8a7aa9]">
-                Budget details
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#737373]">
+                {t('Budget details')}
               </p>
-              <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#241c3b]">
+              <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#262626]">
                 {budget.name}
               </h1>
               <span
                 className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                   budget.isActive
-                    ? 'bg-violet-100 text-violet-700'
+                    ? 'bg-gray-50 text-gray-700'
                     : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {budget.isActive
-                  ? 'Active'
+                  ? t('Active')
                   : budget.status === 'archived'
-                    ? 'Archived'
-                    : 'Inactive'}
+                    ? t('Archived')
+                    : t('Inactive')}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl bg-[#f8f6fc] px-4 py-3 text-sm">
-            <CalendarDays className="size-5 text-[#6d43e5]" />
+          <div className="flex items-center gap-3 rounded-xl bg-[#fafafa] px-4 py-3 text-sm">
+            <CalendarDays className="size-5 text-[#4b5563]" />
             <div>
-              <p className="text-muted-foreground">Budget period</p>
+              <p className="text-muted-foreground">{t('Budget period')}</p>
               <p className="mt-1 font-medium text-foreground">
-                {formatDate(budget.startDate)} — {formatDate(budget.endDate)}
+                {formatDate(budget.startDate, locale)} — {formatDate(budget.endDate, locale)}
               </p>
             </div>
           </div>
         </div>
         <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border pt-5 sm:grid-cols-4">
           <div>
-            <p className="text-sm text-muted-foreground">Starting amount</p>
+            <p className="text-sm text-muted-foreground">{t('Starting amount')}</p>
             <p className="mt-1 font-display text-2xl font-semibold tracking-tight text-foreground">
-              {formatMoney(budget.initialAmount, budget.currency)}
+              {formatMoney(budget.initialAmount, budget.currency, locale)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Planned</p>
+            <p className="text-sm text-muted-foreground">{t('Planned')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatMoney(budget.plannedAmount, budget.currency)}
+              {formatMoney(budget.plannedAmount, budget.currency, locale)}
             </p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Spent</p>
+            <p className="text-sm text-muted-foreground">{t('Spent')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatMoney(budget.spentAmount, budget.currency)}
+              {formatMoney(budget.spentAmount, budget.currency, locale)}
             </p>
             <div
-              className="mt-3 h-2 overflow-hidden rounded-full bg-[#eeeaf4]"
+              className="mt-3 h-2 overflow-hidden rounded-full bg-[#f0f0f0]"
               role="progressbar"
-              aria-label="Budget spent"
+              aria-label={t('Budget spent')}
               aria-valuemin={0}
               aria-valuemax={planned || 1}
               aria-valuenow={Math.min(Math.max(spent, 0), planned || 1)}
             >
               <div
-                className="h-full rounded-full bg-[#7650e8]"
+                className="h-full rounded-full bg-[#6b7280]"
                 style={{ width: `${spendPercent}%` }}
               />
             </div>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Remaining</p>
+            <p className="text-sm text-muted-foreground">{t('Remaining')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatMoney(budget.remainingAmount, budget.currency)}
+              {formatMoney(budget.remainingAmount, budget.currency, locale)}
             </p>
           </div>
         </div>
@@ -200,13 +200,13 @@ export function BudgetDetailsPage() {
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-              Budget categories
+              {t('Budget categories')}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Spending and planned amounts for this period.
+              {t('Spending and planned amounts for this period.')}
             </p>
           </div>
-          <span className="rounded-full bg-[#f1eef8] px-3 py-1 text-sm font-semibold text-[#6d43e5]">
+          <span className="rounded-full bg-[#f8f8f8] px-3 py-1 text-sm font-semibold text-[#4b5563]">
             {budget.categories.length}
           </span>
         </div>
@@ -217,7 +217,7 @@ export function BudgetDetailsPage() {
           }}
         >
           <Plus />
-          Create category
+          {t('Create category')}
         </Button>
 
         {budget.categories.length > 0 ? (
@@ -237,10 +237,10 @@ export function BudgetDetailsPage() {
                     <Link
                       to={`/budgets/${budget.id}/${category.id}`}
                       className="flex flex-1 flex-wrap items-center justify-between gap-4 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      aria-label={`Open ${category.name} expenses`}
+                      aria-label={`${t('Open expenses')} ${category.name}`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="grid size-10 place-items-center rounded-xl bg-[#f4f1fa] text-[#7650e8]">
+                        <span className="grid size-10 place-items-center rounded-xl bg-[#f8f8f8] text-[#6b7280]">
                           <CircleDollarSign className="size-5" />
                         </span>
                         <div>
@@ -248,14 +248,14 @@ export function BudgetDetailsPage() {
                             {category.name}
                           </h3>
                           <p className="mt-1 text-sm text-muted-foreground">
-                            {formatMoney(categorySpent, budget.currency)} spent
+                            {formatMoney(categorySpent, budget.currency, locale)} {t('spent')}
                           </p>
                         </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Planned{' '}
+                        {t('Planned')}{' '}
                         <span className="font-semibold text-foreground">
-                          {formatMoney(category.plannedAmount, budget.currency)}
+                          {formatMoney(category.plannedAmount, budget.currency, locale)}
                           </span>
                         </p>
                     </Link>
@@ -269,10 +269,10 @@ export function BudgetDetailsPage() {
                         setEditingCategory(category);
                         setCategoryFormOpen(true);
                       }}
-                      aria-label={`Edit ${category.name}`}
+                      aria-label={`${t('Edit category')} ${category.name}`}
                     >
                       <Pencil />
-                      Edit
+                      {t('Edit')}
                     </Button>
                     <Button
                       type="button"
@@ -282,22 +282,22 @@ export function BudgetDetailsPage() {
                         deleteMutation.reset();
                         setDeletingCategory(category);
                       }}
-                      aria-label={`Delete ${category.name}`}
+                      aria-label={`${t('Delete category')} ${category.name}`}
                     >
                       <Trash2 />
-                      Delete
+                      {t('Delete')}
                     </Button>
                   </div>
                   <div
-                    className="mt-4 h-2 overflow-hidden rounded-full bg-[#eeeaf4]"
+                    className="mt-4 h-2 overflow-hidden rounded-full bg-[#f0f0f0]"
                     role="progressbar"
-                    aria-label={`${category.name} spending`}
+                    aria-label={`${category.name}: ${t('Spent')}`}
                     aria-valuemin={0}
                     aria-valuemax={categoryPlanned || 1}
                     aria-valuenow={Math.min(Math.max(categorySpent, 0), categoryPlanned || 1)}
                   >
                     <div
-                      className="h-full rounded-full bg-[#7650e8]"
+                      className="h-full rounded-full bg-[#6b7280]"
                       style={{ width: `${categoryPercent}%` }}
                     />
                   </div>
@@ -309,10 +309,10 @@ export function BudgetDetailsPage() {
           <div className="mt-4 rounded-xl border border-dashed border-border bg-white px-6 py-12 text-center">
             <CircleDollarSign className="mx-auto size-9 text-muted-foreground" />
             <h3 className="mt-3 font-display text-lg font-semibold text-foreground">
-              No categories yet
+              {t('No categories yet')}
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Categories for this budget will appear here once they are added.
+              {t('Categories for this budget will appear here once they are added.')}
             </p>
           </div>
         )}
@@ -338,17 +338,16 @@ export function BudgetDetailsPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete category?</DialogTitle>
+            <DialogTitle>{t('Delete category?')}</DialogTitle>
             <DialogDescription>
-              “{deletingCategory?.name}” will be removed from this budget. Categories with expenses
-              cannot be deleted.
+                “{deletingCategory?.name}” {t('will be removed from this budget. Categories with expenses cannot be deleted.')}
             </DialogDescription>
           </DialogHeader>
           {deleteMutation.isError ? (
             <p role="alert" className="mb-4 text-sm font-medium text-destructive">
               {deleteMutation.error instanceof Error
-                ? deleteMutation.error.message
-                : 'Unable to delete category.'}
+                ? t(deleteMutation.error.message)
+                : t('Unable to delete category.')}
             </p>
           ) : null}
           <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
@@ -358,7 +357,7 @@ export function BudgetDetailsPage() {
               onClick={() => setDeletingCategory(undefined)}
               disabled={deleteMutation.isPending}
             >
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               type="button"
@@ -369,12 +368,12 @@ export function BudgetDetailsPage() {
               {deleteMutation.isPending ? (
                 <>
                   <Spinner />
-                  Deleting…
+                  {t('Deleting…')}
                 </>
               ) : (
                 <>
                   <Trash2 />
-                  Delete category
+                  {t('Delete category')}
                 </>
               )}
             </Button>

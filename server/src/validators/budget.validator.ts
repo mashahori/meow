@@ -17,8 +17,9 @@ const nameSchema = z
 const amountSchema = z
   .number()
   .finite('Amount must be a finite number')
+  .int('Amount must be a whole number')
   .min(0, 'Amount must not be negative')
-  .max(9_999_999_999.99, 'Amount is too large');
+  .max(9_999_999_999, 'Amount is too large');
 
 const currencySchema = z.enum(['RUB', 'USD', 'EUR'], 'Unsupported currency');
 

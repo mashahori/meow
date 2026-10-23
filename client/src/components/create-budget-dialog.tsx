@@ -11,25 +11,29 @@ import { Field } from './ui/field';
 import { Input } from './ui/input';
 import { Spinner } from './ui/spinner';
 import { createBudget, updateBudget } from '../lib/budget-api';
+import { useTranslation } from '../contexts/language-context';
 
-const budgetFormSchema = z
-  .object({
-    name: z.string().trim().min(1, 'Enter a budget name').max(100, 'Maximum 100 characters'),
-    startDate: z.string().date('Enter a valid start date'),
-    endDate: z.string().date('Enter a valid end date'),
-    initialAmount: z
-      .number({ message: 'Enter an amount' })
-      .finite('Enter a valid amount')
-      .min(0, 'Amount cannot be negative')
-      .max(9_999_999_999.99, 'Amount is too large'),
-    currency: z.enum(['RUB', 'USD', 'EUR']),
-  })
-  .refine((data) => data.endDate >= data.startDate, {
-    message: 'End date must not be before start date',
-    path: ['endDate'],
-  });
+function createBudgetFormSchema(t: (text: string) => string) {
+  return z
+    .object({
+      name: z.string().trim().min(1, t('Enter a budget name')).max(100, t('Maximum 100 characters')),
+      startDate: z.string().date(t('Enter a valid start date')),
+      endDate: z.string().date(t('Enter a valid end date')),
+      initialAmount: z
+        .number({ message: t('Enter an amount') })
+        .finite(t('Enter a valid amount'))
+        .int(t('Enter a whole amount'))
+        .min(0, t('Amount cannot be negative'))
+        .max(9_999_999_999, t('Amount is too large')),
+      currency: z.enum(['RUB', 'USD', 'EUR']),
+    })
+    .refine((data) => data.endDate >= data.startDate, {
+      message: t('End date must not be before start date'),
+      path: ['endDate'],
+    });
+}
 
-type BudgetFormValues = z.infer<typeof budgetFormSchema>;
+type BudgetFormValues = z.infer<ReturnType<typeof createBudgetFormSchema>>;
 
 function getDefaultDates() {
   const today = new Date();
@@ -41,10 +45,10 @@ function getDefaultDates() {
   return { startDate: toDateInput(startDate), endDate: toDateInput(endDate) };
 }
 
-function getErrorMessage(error: unknown, action: 'create' | 'update') {
+function getErrorMessage(error: unknown, action: 'create' | 'update', t: (text: string) => string) {
   return error instanceof Error
-    ? error.message
-    : `Unable to ${action} budget.`;
+    ? t(error.message)
+    : t(`Unable to ${action} budget.`);
 }
 
 type BudgetFormDialogProps = {
@@ -60,6 +64,7 @@ export function BudgetFormDialog({
   onOpenChange,
   renderTrigger,
 }: BudgetFormDialogProps) {
+  const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = open ?? internalOpen;
   const setOpen = (nextOpen: boolean) => {
@@ -67,6 +72,7 @@ export function BudgetFormDialog({
     onOpenChange?.(nextOpen);
   };
   const queryClient = useQueryClient();
+  const budgetFormSchema = createBudgetFormSchema(t);
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
@@ -111,7 +117,7 @@ export function BudgetFormDialog({
       ) : (
         <Button onClick={openDialog}>
           <WalletCards />
-          Create budget
+          {t('Create budget')}
         </Button>
       )}
       <Dialog
@@ -126,25 +132,25 @@ export function BudgetFormDialog({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{budget ? 'Edit budget' : 'Create a budget'}</DialogTitle>
+            <DialogTitle>{t(budget ? 'Edit budget' : 'Create a budget')}</DialogTitle>
             <DialogDescription>
               {budget
-                ? 'Update the name, period or starting amount for your budget.'
-                : 'Set a name, period and starting amount for your budget.'}
+                ? t('Update the name, period or starting amount for your budget.')
+                : t('Set a name, period and starting amount for your budget.')}
             </DialogDescription>
           </DialogHeader>
           <form className="space-y-5" onSubmit={onSubmit} noValidate>
             <Field
-              label="Budget name"
+              label={t('Budget name')}
               htmlFor="budget-name"
               error={form.formState.errors.name?.message}
             >
               <div className="relative">
-                <WalletCards className="absolute left-4 top-3.5 size-[18px] text-[#aaa4b7]" />
+                <WalletCards className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
                 <Input
                   id="budget-name"
                   className="pl-11"
-                  placeholder="e.g. Monthly budget"
+                  placeholder={t('e.g. Monthly budget')}
                   autoFocus
                   {...form.register('name')}
                 />
@@ -153,12 +159,12 @@ export function BudgetFormDialog({
 
             <div className="grid gap-5 sm:grid-cols-2">
               <Field
-                label="Start date"
+                label={t('Start date')}
                 htmlFor="budget-start-date"
                 error={form.formState.errors.startDate?.message}
               >
                 <div className="relative">
-                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-[#aaa4b7]" />
+                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
                   <Input
                     id="budget-start-date"
                     className="pl-11"
@@ -168,12 +174,12 @@ export function BudgetFormDialog({
                 </div>
               </Field>
               <Field
-                label="End date"
+                label={t('End date')}
                 htmlFor="budget-end-date"
                 error={form.formState.errors.endDate?.message}
               >
                 <div className="relative">
-                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-[#aaa4b7]" />
+                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
                   <Input
                     id="budget-end-date"
                     className="pl-11"
@@ -186,39 +192,39 @@ export function BudgetFormDialog({
 
             <div className="grid gap-5 sm:grid-cols-[1fr_0.8fr]">
               <Field
-                label="Starting amount"
+                label={t('Starting amount')}
                 htmlFor="budget-amount"
                 error={form.formState.errors.initialAmount?.message}
               >
                 <div className="relative">
-                  <Coins className="absolute left-4 top-3.5 size-[18px] text-[#aaa4b7]" />
+                  <Coins className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
                   <Input
                     id="budget-amount"
                     className="pl-11"
                     type="number"
                     min="0"
-                    max="9999999999.99"
-                    step="0.01"
+                    max="9999999999"
+                    step="1"
                     {...form.register('initialAmount', { valueAsNumber: true })}
                   />
                 </div>
               </Field>
-              <Field label="Currency" htmlFor="budget-currency">
+              <Field label={t('Currency')} htmlFor="budget-currency">
                 <select
                   id="budget-currency"
                   className="h-12 w-full rounded-xl border border-input bg-transparent px-4 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                   {...form.register('currency')}
                 >
-                  <option value="RUB">RUB — Ruble</option>
-                  <option value="USD">USD — US Dollar</option>
-                  <option value="EUR">EUR — Euro</option>
+                  <option value="RUB">RUB — {t('Ruble')}</option>
+                  <option value="USD">USD — {t('US Dollar')}</option>
+                  <option value="EUR">EUR — {t('Euro')}</option>
                 </select>
               </Field>
             </div>
 
             {mutation.isError ? (
               <p role="alert" className="text-sm font-medium text-destructive">
-                {getErrorMessage(mutation.error, action)}
+                {getErrorMessage(mutation.error, action, t)}
               </p>
             ) : null}
 
@@ -233,17 +239,17 @@ export function BudgetFormDialog({
                 }}
                 disabled={mutation.isPending}
               >
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending ? (
                   <>
                     <Spinner />
-                    Creating…
+                    {t('Creating…')}
                   </>
                 ) : (
                   <>
-                    {budget ? 'Save changes' : 'Create budget'}
+                    {t(budget ? 'Save changes' : 'Create budget')}
                     <ArrowRight />
                   </>
                 )}

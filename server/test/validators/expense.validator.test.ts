@@ -7,23 +7,23 @@ import {
 const categoryId = '3f2504e0-e89b-41d4-a716-446655440000';
 
 describe('expense validators', () => {
-  it('accepts positive decimal string amounts and trims notes', () => {
+  it('accepts positive whole-number amounts and trims notes', () => {
     expect(
       validateCreateExpensePayload({
         categoryId,
-        amount: '0.50',
+        amount: '50',
         spentAt: '2026-06-15',
         note: '  Weekly shopping  ',
       }),
     ).toEqual({
       categoryId,
-      amount: '0.50',
+      amount: '50',
       spentAt: '2026-06-15',
       note: 'Weekly shopping',
     });
   });
 
-  it.each(['0', '0.00', '-1.00', '1.001', 100, '10000000000.00'])(
+  it.each(['0', '0.50', '10.00', '-1', 100, '10000000000'])(
     'rejects invalid amount %p',
     (amount) => {
       expect(() =>
@@ -46,7 +46,7 @@ describe('expense validators', () => {
     expect(() =>
       validateCreateExpensePayload({
         categoryId,
-        amount: '10.00',
+        amount: '10',
         spentAt: '2026-02-30',
       }),
     ).toThrow();
