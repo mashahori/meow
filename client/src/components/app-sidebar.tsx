@@ -10,7 +10,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -48,15 +47,11 @@ export function AppSidebar() {
           <span className="grid size-9 place-items-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
             <Layers3 size={19} />
           </span>
-          <span className="font-display text-lg font-bold tracking-[-0.03em]">
-            Layered
-          </span>
         </div>
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel>{t('Workspace')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigation.map(({ title, url, icon: Icon }) => (

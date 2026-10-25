@@ -23,7 +23,7 @@ function createBudgetFormSchema(t: (text: string) => string) {
         .number({ message: t('Enter an amount') })
         .finite(t('Enter a valid amount'))
         .int(t('Enter a whole amount'))
-        .min(0, t('Amount cannot be negative'))
+        .min(1, t('Amount must be greater than zero'))
         .max(9_999_999_999, t('Amount is too large')),
       currency: z.enum(['RUB', 'USD', 'EUR']),
     })
@@ -146,7 +146,7 @@ export function BudgetFormDialog({
               error={form.formState.errors.name?.message}
             >
               <div className="relative">
-                <WalletCards className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
+                <WalletCards className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
                 <Input
                   id="budget-name"
                   className="pl-11"
@@ -164,7 +164,7 @@ export function BudgetFormDialog({
                 error={form.formState.errors.startDate?.message}
               >
                 <div className="relative">
-                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
+                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
                   <Input
                     id="budget-start-date"
                     className="pl-11"
@@ -179,7 +179,7 @@ export function BudgetFormDialog({
                 error={form.formState.errors.endDate?.message}
               >
                 <div className="relative">
-                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
+                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
                   <Input
                     id="budget-end-date"
                     className="pl-11"
@@ -197,12 +197,12 @@ export function BudgetFormDialog({
                 error={form.formState.errors.initialAmount?.message}
               >
                 <div className="relative">
-                  <Coins className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
+                  <Coins className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
                   <Input
                     id="budget-amount"
                     className="pl-11"
                     type="number"
-                    min="0"
+                    min="1"
                     max="9999999999"
                     step="1"
                     {...form.register('initialAmount', { valueAsNumber: true })}

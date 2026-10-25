@@ -40,7 +40,7 @@ const russianTranslations: Record<string, string> = {
   'Remember your password?': 'Вспомнили пароль?',
   'Planning': 'Планирование',
   Budgets: 'Бюджеты',
-  'All your budgeting periods in one place.': 'Все ваши бюджетные периоды в одном месте.',
+  'All your budgets in one place.': 'Все ваши бюджеты в одном месте.',
   'Loading budgets…': 'Загружаем бюджеты…',
   'Loading budgets': 'Загрузка бюджетов',
   'Unable to load budgets.': 'Не удалось загрузить бюджеты.',
@@ -99,7 +99,6 @@ const russianTranslations: Record<string, string> = {
   Remaining: 'Остаток',
   'Budget spent': 'Расходы по бюджету',
   'Budget categories': 'Категории бюджета',
-  'Spending and planned amounts for this period.': 'Расходы и запланированные суммы за этот период.',
   'Create category': 'Создать категорию',
   'Open expenses': 'Открыть расходы',
   'Edit category': 'Изменить категорию',
@@ -113,7 +112,6 @@ const russianTranslations: Record<string, string> = {
   'Unable to update category.': 'Не удалось обновить категорию.',
   'Category details': 'Детали категории',
   Expenses: 'Расходы',
-  'All expenses in this category.': 'Все расходы в этой категории.',
   'Add expense': 'Добавить расход',
   'Loading category…': 'Загружаем категорию…',
   'Loading expenses…': 'Загружаем расходы…',
@@ -136,10 +134,9 @@ const russianTranslations: Record<string, string> = {
   'What was this expense for?': 'На что потратили?',
   'Unable to create expense.': 'Не удалось создать расход.',
   'Unable to update expense.': 'Не удалось обновить расход.',
-  'Workspace': 'Рабочее пространство',
   Dashboard: 'Главная',
   Welcome: 'Добро пожаловать',
-  'Welcome to Layered.': 'Добро пожаловать в Layered.',
+  'Welcome to Meow budget.': 'Добро пожаловать в Meow budget.',
   'This is the starting point for the shared application layout and your future workspace modules.': 'Здесь находится основа приложения и будущих модулей рабочего пространства.',
   'Invalid email or password': 'Неверная почта или пароль',
   'Email already registered': 'Эта почта уже зарегистрирована',
@@ -202,7 +199,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     window.localStorage.setItem('layered-language', language);
     document.documentElement.lang = language;
-    document.title = language === 'ru' ? 'Layered — бюджеты' : 'Layered — budgets';
+    document.title = 'Meow budget';
   }, [language]);
 
   const value = useMemo<LanguageContextValue>(

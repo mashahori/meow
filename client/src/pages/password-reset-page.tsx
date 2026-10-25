@@ -88,19 +88,19 @@ export function PasswordResetPage({ mode }: PasswordResetPageProps) {
     : passwordForm.formState.isSubmitting
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-[#fafafa] px-4 py-10 text-[#1f1f1f] sm:px-6">
+    <main className="flex min-h-svh items-center justify-center bg-background px-4 py-10 text-foreground sm:px-6">
       <section className="w-full max-w-md rounded-[2rem] bg-white px-6 py-8 shadow-[0_24px_80px_-32px_rgba(0,0,0,0.12)] sm:px-10 sm:py-12">
         <div className="mb-6 flex justify-end">
           <LanguageSwitcher />
         </div>
         <div className="mb-8">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[#737373]">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {t('Password recovery')}
           </p>
-          <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-[#262626]">
+          <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-foreground">
             {t(isRequest ? 'Forgot your password?' : 'Choose a new password')}
           </h1>
-          <p className="mt-3 text-sm leading-6 text-[#737373]">
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {isRequest
               ? t('Enter your account email and we will send you a password reset link.')
               : t('Your new password must be at least 8 characters long.')}
@@ -109,11 +109,11 @@ export function PasswordResetPage({ mode }: PasswordResetPageProps) {
 
         {isComplete ? (
           <div role="status" className="space-y-5">
-            <p className="text-sm leading-6 text-[#525252]">
+            <p className="text-sm leading-6 text-muted-foreground">
               {t('If an account with that email exists, a password reset link has been sent.')}
             </p>
             <Link
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#4b5563] hover:text-[#262626]"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-foreground"
               to="/login"
             >
               {t('Back to sign in')}
@@ -129,7 +129,7 @@ export function PasswordResetPage({ mode }: PasswordResetPageProps) {
             {isRequest ? (
               <Field label={t('Email address')} error={emailForm.formState.errors.email?.message}>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-3.5 text-[#a3a3a3]" size={18} />
+                  <Mail className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                   <Input
                     className="pl-11"
                     type="email"
@@ -142,7 +142,7 @@ export function PasswordResetPage({ mode }: PasswordResetPageProps) {
               <>
                 <Field label={t('New password')} error={passwordForm.formState.errors.password?.message}>
                   <div className="relative">
-                    <LockKeyhole className="absolute left-4 top-3.5 text-[#a3a3a3]" size={18} />
+                    <LockKeyhole className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                     <Input
                       className="pl-11"
                       type="password"
@@ -153,7 +153,7 @@ export function PasswordResetPage({ mode }: PasswordResetPageProps) {
                 </Field>
                 <Field label={t('Confirm new password')} error={passwordForm.formState.errors.confirmPassword?.message}>
                   <div className="relative">
-                    <LockKeyhole className="absolute left-4 top-3.5 text-[#a3a3a3]" size={18} />
+                    <LockKeyhole className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                     <Input
                       className="pl-11"
                       type="password"
@@ -166,7 +166,7 @@ export function PasswordResetPage({ mode }: PasswordResetPageProps) {
             )}
 
             {submitError ? (
-              <p role="alert" className="text-sm font-medium text-rose-600">
+              <p role="alert" className="text-sm font-medium text-destructive">
                 {submitError}
               </p>
             ) : null}
@@ -182,10 +182,10 @@ export function PasswordResetPage({ mode }: PasswordResetPageProps) {
         )}
 
         {!isComplete ? (
-          <p className="mt-8 text-center text-sm text-[#737373]">
+          <p className="mt-8 text-center text-sm text-muted-foreground">
             {t('Remember your password?')}{' '}
             <Link
-              className="font-semibold text-[#4b5563] hover:text-[#262626]"
+              className="font-semibold text-primary hover:text-foreground"
               to="/login"
             >
               {t('Sign in')}

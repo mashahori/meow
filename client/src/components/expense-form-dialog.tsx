@@ -148,21 +148,29 @@ export function ExpenseFormDialog({
               {...form.register('amount')}
             />
           </Field>
-          <Field label={t('Date')} htmlFor="expense-date" error={form.formState.errors.spentAt?.message}>
+          <Field
+            label={t('Note')}
+            htmlFor="expense-note"
+            error={form.formState.errors.note?.message}
+          >
+            <Input
+              id="expense-note"
+              placeholder={t('What was this expense for?')}
+              maxLength={500}
+              {...form.register('note')}
+            />
+          </Field>
+          <Field
+            label={t('Date')}
+            htmlFor="expense-date"
+            error={form.formState.errors.spentAt?.message}
+          >
             <Input
               id="expense-date"
               type="date"
               min={startDate}
               max={endDate}
               {...form.register('spentAt')}
-            />
-          </Field>
-          <Field label={t('Note')} htmlFor="expense-note" error={form.formState.errors.note?.message}>
-            <Input
-              id="expense-note"
-              placeholder={t('What was this expense for?')}
-              maxLength={500}
-              {...form.register('note')}
             />
           </Field>
           {mutation.isError ? (

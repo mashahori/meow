@@ -126,14 +126,14 @@ export function CategoryDetailsPage() {
 
       <header className="mt-6 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
         <div className="flex items-start gap-4">
-          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#f8f8f8] text-[#4b5563]">
+          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted text-primary">
             <CircleDollarSign size={22} />
           </span>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#737373]">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               {t('Category details')}
             </p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#262626]">
+            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-foreground">
               {category.name}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">{budget.name}</p>
@@ -166,17 +166,13 @@ export function CategoryDetailsPage() {
       </header>
 
       <section className="mt-9">
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-col">
           <div>
             <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
               {t('Expenses')}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t('All expenses in this category.')}</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-[#f8f8f8] px-3 py-1 text-sm font-semibold text-[#4b5563]">
-              {expensesQuery.data?.length ?? 0}
-            </span>
             <Button
               onClick={() => {
                 setEditingExpense(undefined);
@@ -211,7 +207,7 @@ export function CategoryDetailsPage() {
                 className="flex flex-wrap items-center justify-between gap-3 p-5"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f8f8f8] text-[#6b7280]">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
                     <ReceiptText className="size-5" />
                   </span>
                   <div className="min-w-0">

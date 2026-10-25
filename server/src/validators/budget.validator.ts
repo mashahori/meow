@@ -21,6 +21,8 @@ const amountSchema = z
   .min(0, 'Amount must not be negative')
   .max(9_999_999_999, 'Amount is too large');
 
+const createAmountSchema = amountSchema.min(1, 'Amount must be greater than zero');
+
 const currencySchema = z.enum(['RUB', 'USD', 'EUR'], 'Unsupported currency');
 
 const createSchema = z
@@ -28,7 +30,7 @@ const createSchema = z
     name: nameSchema,
     startDate: dateSchema,
     endDate: dateSchema,
-    initialAmount: amountSchema,
+    initialAmount: createAmountSchema,
     currency: currencySchema,
   })
   .strict()
@@ -42,7 +44,7 @@ const updateSchema = z
     name: nameSchema.optional(),
     startDate: dateSchema.optional(),
     endDate: dateSchema.optional(),
-    initialAmount: amountSchema.optional(),
+    initialAmount: createAmountSchema.optional(),
     currency: currencySchema.optional(),
   })
   .strict()

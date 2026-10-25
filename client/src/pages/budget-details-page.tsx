@@ -3,14 +3,16 @@ import {
   ArrowLeft,
   CalendarDays,
   CircleDollarSign,
+  Ellipsis,
   Pencil,
   Plus,
   Trash2,
-  WalletCards,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Menu } from '@base-ui/react/menu';
 import { CategoryFormDialog } from '../components/category-form-dialog';
+import { BudgetFormDialog } from '../components/create-budget-dialog';
 import { Button } from '../components/ui/button';
 import {
   Dialog,
@@ -20,7 +22,12 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
-import { deleteCategory, getBudgetDetails, type BudgetCategory } from '../lib/budget-api';
+import {
+  deleteBudget,
+  deleteCategory,
+  getBudgetDetails,
+  type BudgetCategory,
+} from '../lib/budget-api';
 import { useTranslation } from '../contexts/language-context';
 
 function formatDate(date: string, locale: string) {
@@ -45,6 +52,8 @@ export function BudgetDetailsPage() {
   const [categoryFormOpen, setCategoryFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<BudgetCategory>();
   const [deletingCategory, setDeletingCategory] = useState<BudgetCategory>();
+  const [budgetFormOpen, setBudgetFormOpen] = useState(false);
+  const [deleteBudgetDialogOpen, setDeleteBudgetDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const budgetQuery = useQuery({
     queryKey: ['budget', budgetId],
@@ -64,6 +73,21 @@ export function BudgetDetailsPage() {
         await queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
       }
       setDeletingCategory(undefined);
+    },
+  });
+  const deleteBudgetMutation = useMutation({
+    mutationFn: () => {
+      if (!budgetId) throw new Error(t('Budget not found.'));
+      return deleteBudget(budgetId);
+    },
+    onSuccess: async () => {
+      if (budgetId) {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['budgets'] }),
+          queryClient.invalidateQueries({ queryKey: ['budget', budgetId] }),
+        ]);
+      }
+      setDeleteBudgetDialogOpen(false);
     },
   });
 
@@ -119,39 +143,69 @@ export function BudgetDetailsPage() {
 
       <header className="mt-6 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-5">
-          <div className="flex items-start gap-4">
-            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#f8f8f8] text-[#4b5563]">
-              <WalletCards size={22} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#737373]">
-                {t('Budget details')}
-              </p>
-              <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#262626]">
-                {budget.name}
-              </h1>
-              <span
-                className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  budget.isActive
-                    ? 'bg-gray-50 text-gray-700'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {budget.isActive
-                  ? t('Active')
-                  : budget.status === 'archived'
-                    ? t('Archived')
-                    : t('Inactive')}
-              </span>
+          <div className="flex flex-1 items-start gap-4">
+            <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  {t('Budget details')}
+                </p>
+                <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-foreground">
+                  {budget.name}
+                </h1>
+                <span
+                  className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    budget.isActive ? 'bg-muted text-foreground' : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {budget.isActive
+                    ? t('Active')
+                    : budget.status === 'archived'
+                      ? t('Archived')
+                      : t('Inactive')}
+                </span>
+              </div>
+              <Menu.Root>
+                <Menu.Trigger
+                  aria-label={`${t('Actions for')} ${budget.name}`}
+                  render={<Button variant="ghost" size="icon-sm" />}
+                >
+                  <Ellipsis aria-hidden="true" />
+                </Menu.Trigger>
+                <Menu.Portal>
+                  <Menu.Positioner sideOffset={6} align="end" className="z-50">
+                    <Menu.Popup className="min-w-40 rounded-lg border border-border bg-white p-1 shadow-lg outline-none">
+                      <Menu.Item
+                        onClick={() => setBudgetFormOpen(true)}
+                        className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                      >
+                        <Pencil className="size-4" aria-hidden="true" />
+                        {t('Edit')}
+                      </Menu.Item>
+                      <Menu.Item
+                        onClick={() => {
+                          deleteBudgetMutation.reset();
+                          setDeleteBudgetDialogOpen(true);
+                        }}
+                        className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none data-highlighted:bg-destructive/10"
+                      >
+                        <Trash2 className="size-4" aria-hidden="true" />
+                        {t('Delete')}
+                      </Menu.Item>
+                    </Menu.Popup>
+                  </Menu.Positioner>
+                </Menu.Portal>
+              </Menu.Root>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-xl bg-[#fafafa] px-4 py-3 text-sm">
-            <CalendarDays className="size-5 text-[#4b5563]" />
-            <div>
-              <p className="text-muted-foreground">{t('Budget period')}</p>
-              <p className="mt-1 font-medium text-foreground">
-                {formatDate(budget.startDate, locale)} — {formatDate(budget.endDate, locale)}
-              </p>
+          <div className="flex w-full items-center gap-3">
+            <div className="flex flex-1 items-center gap-3 rounded-xl bg-muted px-4 py-3 text-sm">
+              <CalendarDays className="size-5 text-primary" />
+              <div>
+                <p className="text-muted-foreground">{t('Budget period')}</p>
+                <p className="mt-1 font-medium text-foreground">
+                  {formatDate(budget.startDate, locale)} — {formatDate(budget.endDate, locale)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -173,19 +227,6 @@ export function BudgetDetailsPage() {
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
               {formatMoney(budget.spentAmount, budget.currency, locale)}
             </p>
-            <div
-              className="mt-3 h-2 overflow-hidden rounded-full bg-[#f0f0f0]"
-              role="progressbar"
-              aria-label={t('Budget spent')}
-              aria-valuemin={0}
-              aria-valuemax={planned || 1}
-              aria-valuenow={Math.min(Math.max(spent, 0), planned || 1)}
-            >
-              <div
-                className="h-full rounded-full bg-[#6b7280]"
-                style={{ width: `${spendPercent}%` }}
-              />
-            </div>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('Remaining')}</p>
@@ -194,21 +235,25 @@ export function BudgetDetailsPage() {
             </p>
           </div>
         </div>
+        <div
+          className="mt-5 h-2 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-label={t('Budget spent')}
+          aria-valuemin={0}
+          aria-valuemax={planned || 1}
+          aria-valuenow={Math.min(Math.max(spent, 0), planned || 1)}
+        >
+          <div className="h-full rounded-full bg-progress-fill" style={{ width: `${spendPercent}%` }} />
+        </div>
       </header>
 
       <section className="mt-9">
         <div className="flex items-end justify-between gap-4">
-          <div>
+          <div className="mb-4">
             <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground">
               {t('Budget categories')}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t('Spending and planned amounts for this period.')}
-            </p>
           </div>
-          <span className="rounded-full bg-[#f8f8f8] px-3 py-1 text-sm font-semibold text-[#4b5563]">
-            {budget.categories.length}
-          </span>
         </div>
         <Button
           onClick={() => {
@@ -240,7 +285,7 @@ export function BudgetDetailsPage() {
                       aria-label={`${t('Open expenses')} ${category.name}`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="grid size-10 place-items-center rounded-xl bg-[#f8f8f8] text-[#6b7280]">
+                        <span className="grid size-10 place-items-center rounded-xl bg-muted text-muted-foreground">
                           <CircleDollarSign className="size-5" />
                         </span>
                         <div>
@@ -256,8 +301,8 @@ export function BudgetDetailsPage() {
                         {t('Planned')}{' '}
                         <span className="font-semibold text-foreground">
                           {formatMoney(category.plannedAmount, budget.currency, locale)}
-                          </span>
-                        </p>
+                        </span>
+                      </p>
                     </Link>
                   </div>
                   <div className="mt-4 flex justify-end gap-2">
@@ -289,7 +334,7 @@ export function BudgetDetailsPage() {
                     </Button>
                   </div>
                   <div
-                    className="mt-4 h-2 overflow-hidden rounded-full bg-[#f0f0f0]"
+                    className="mt-4 h-2 overflow-hidden rounded-full bg-muted"
                     role="progressbar"
                     aria-label={`${category.name}: ${t('Spent')}`}
                     aria-valuemin={0}
@@ -297,7 +342,7 @@ export function BudgetDetailsPage() {
                     aria-valuenow={Math.min(Math.max(categorySpent, 0), categoryPlanned || 1)}
                   >
                     <div
-                      className="h-full rounded-full bg-[#6b7280]"
+                      className="h-full rounded-full bg-progress-fill"
                       style={{ width: `${categoryPercent}%` }}
                     />
                   </div>
@@ -327,6 +372,63 @@ export function BudgetDetailsPage() {
           if (!open) setEditingCategory(undefined);
         }}
       />
+      <BudgetFormDialog
+        budget={budget}
+        open={budgetFormOpen}
+        onOpenChange={setBudgetFormOpen}
+        renderTrigger={() => null}
+      />
+      <Dialog
+        open={deleteBudgetDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteBudgetDialogOpen(open);
+          if (!open) deleteBudgetMutation.reset();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('Delete budget?')}</DialogTitle>
+            <DialogDescription>
+              “{budget.name}” {t('will be archived and remain available in your budget history.')}
+            </DialogDescription>
+          </DialogHeader>
+          {deleteBudgetMutation.isError ? (
+            <p role="alert" className="mb-4 text-sm font-medium text-destructive">
+              {deleteBudgetMutation.error instanceof Error
+                ? t(deleteBudgetMutation.error.message)
+                : t('Unable to delete budget.')}
+            </p>
+          ) : null}
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteBudgetDialogOpen(false)}
+              disabled={deleteBudgetMutation.isPending}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => deleteBudgetMutation.mutate()}
+              disabled={deleteBudgetMutation.isPending}
+            >
+              {deleteBudgetMutation.isPending ? (
+                <>
+                  <Spinner />
+                  {t('Deleting…')}
+                </>
+              ) : (
+                <>
+                  <Trash2 />
+                  {t('Delete budget')}
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={Boolean(deletingCategory)}
         onOpenChange={(open) => {
@@ -340,7 +442,8 @@ export function BudgetDetailsPage() {
           <DialogHeader>
             <DialogTitle>{t('Delete category?')}</DialogTitle>
             <DialogDescription>
-                “{deletingCategory?.name}” {t('will be removed from this budget. Categories with expenses cannot be deleted.')}
+              “{deletingCategory?.name}”{' '}
+              {t('will be removed from this budget. Categories with expenses cannot be deleted.')}
             </DialogDescription>
           </DialogHeader>
           {deleteMutation.isError ? (

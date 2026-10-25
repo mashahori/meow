@@ -1,9 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-sans);
 }
 
 @theme inline {
@@ -33,42 +32,44 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-progress-fill: var(--progress-fill);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: #fafafa;
-  --foreground: #1f1f1f;
+  --radius: 0.5rem;
+  --background: #f6f8fa;
+  --foreground: #1f2328;
   --card: #ffffff;
-  --card-foreground: #1f1f1f;
+  --card-foreground: #1f2328;
   --popover: #ffffff;
-  --popover-foreground: #1f1f1f;
-  --primary: #4b5563;
+  --popover-foreground: #1f2328;
+  --primary: #3a3d42;
   --primary-foreground: #ffffff;
-  --secondary: #f7f7f7;
-  --secondary-foreground: #333333;
-  --muted: #f7f7f7;
-  --muted-foreground: #737373;
-  --accent: #f7f7f7;
-  --accent-foreground: #333333;
-  --destructive: #e11d48;
-  --border: #eeeeee;
-  --input: #e5e5e5;
-  --ring: #9ca3af;
+  --secondary: #f6f8fa;
+  --secondary-foreground: #1f2328;
+  --muted: #f6f8fa;
+  --muted-foreground: #59636e;
+  --accent: #eaeef2;
+  --accent-foreground: #1f2328;
+  --destructive: #59636e;
+  --border: #d1d9e0;
+  --input: #d1d9e0;
+  --ring: #afb8c1;
   --sidebar: #ffffff;
-  --sidebar-foreground: #333333;
-  --sidebar-primary: #4b5563;
+  --sidebar-foreground: #1f2328;
+  --sidebar-primary: #1f2328;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eeeeee;
-  --sidebar-accent-foreground: #333333;
-  --sidebar-border: #eeeeee;
-  --sidebar-ring: #9ca3af;
+  --sidebar-accent: #eaeef2;
+  --sidebar-accent-foreground: #1f2328;
+  --sidebar-border: #d1d9e0;
+  --sidebar-ring: #afb8c1;
+  --progress-fill: #858b93;
   font-family: var(--font-sans);
-  color: #1f1f1f;
-  background: #fafafa;
+  color: var(--foreground);
+  background: var(--background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

@@ -99,7 +99,7 @@ export function CategoryFormDialog({
             error={form.formState.errors.name?.message}
           >
             <div className="relative">
-              <Tag className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
+              <Tag className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
               <Input
                 id="category-name"
                 className="pl-11"
@@ -115,7 +115,7 @@ export function CategoryFormDialog({
             error={form.formState.errors.plannedAmount?.message}
           >
             <div className="relative">
-              <Coins className="absolute left-4 top-3.5 size-[18px] text-[#a3a3a3]" />
+              <Coins className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
               <Input
                 id="category-planned-amount"
                 className="pl-11"

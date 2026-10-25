@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarDays, Ellipsis, Pencil, Trash2, WalletCards } from 'lucide-react';
+import { CalendarDays, Ellipsis, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu } from '@base-ui/react/menu';
@@ -96,7 +96,7 @@ function BudgetCard({ budget }: { budget: Budget }) {
               {budget.name}
             </h2>
             {budget.isActive ? (
-              <span className="mt-2 inline-flex rounded-full bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700">
+              <span className="mt-2 inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-foreground">
                 {t('Active')}
               </span>
             ) : budget.status === 'archived' ? (
@@ -185,18 +185,15 @@ export function BudgetsPage() {
     <section className="mx-auto max-w-5xl">
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="flex items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#f8f8f8] text-[#4b5563]">
-            <WalletCards size={21} />
-          </span>
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#737373]">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               {t('Planning')}
             </p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-[#262626]">
+            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-foreground">
               {t('Budgets')}
             </h1>
-            <p className="mt-2 text-sm leading-6 text-[#737373]">
-              {t('All your budgeting periods in one place.')}
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {t('All your budgets in one place.')}
             </p>
           </div>
         </div>

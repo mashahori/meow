@@ -9,9 +9,9 @@ export function AppLayout() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset className="bg-transparent">
-          <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-white px-4 md:hidden">
+          <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4 md:hidden">
             <SidebarTrigger />
-            <span className="font-display font-bold">Layered</span>
+            <span className="font-display font-bold">Meow budget</span>
           </header>
           <div className="flex-1 p-5 sm:p-8 lg:p-10">
             <Outlet />
