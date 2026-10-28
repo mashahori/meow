@@ -22,6 +22,7 @@ import {
 import { Spinner } from '../components/ui/spinner';
 import { getBudgetDetails } from '../lib/budget-api';
 import { deleteExpense, getCategoryExpenses, type Expense } from '../lib/expense-api';
+import { formatNumberWithSpaceGrouping } from '../lib/number-format';
 import { useTranslation } from '../contexts/language-context';
 
 function formatDate(date: string, locale: string) {
@@ -33,11 +34,11 @@ function formatDate(date: string, locale: string) {
 }
 
 function formatMoney(amount: string | number, currency: string, locale: string) {
-  return new Intl.NumberFormat(locale, {
+  return formatNumberWithSpaceGrouping(amount, locale, {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
-  }).format(Number(amount));
+  });
 }
 
 export function CategoryDetailsPage() {
