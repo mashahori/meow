@@ -28,6 +28,7 @@ import {
   getBudgetDetails,
   type BudgetCategory,
 } from '../lib/budget-api';
+import { formatNumberWithSpaceGrouping } from '../lib/number-format';
 import { useTranslation } from '../contexts/language-context';
 
 function formatDate(date: string, locale: string) {
@@ -38,12 +39,10 @@ function formatDate(date: string, locale: string) {
   }).format(new Date(`${date}T00:00:00`));
 }
 
-function formatMoney(amount: string | number, currency: string, locale: string) {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
+function formatAmount(amount: string | number, locale: string) {
+  return formatNumberWithSpaceGrouping(amount, locale, {
     maximumFractionDigits: 0,
-  }).format(Number(amount));
+  });
 }
 
 export function BudgetDetailsPage() {
@@ -213,25 +212,25 @@ export function BudgetDetailsPage() {
           <div>
             <p className="text-sm text-muted-foreground">{t('Starting amount')}</p>
             <p className="mt-1 font-display text-2xl font-semibold tracking-tight text-foreground">
-              {formatMoney(budget.initialAmount, budget.currency, locale)}
+              {formatAmount(budget.initialAmount, locale)}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('Planned')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatMoney(budget.plannedAmount, budget.currency, locale)}
+              {formatAmount(budget.plannedAmount, locale)}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('Spent')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatMoney(budget.spentAmount, budget.currency, locale)}
+              {formatAmount(budget.spentAmount, locale)}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('Remaining')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatMoney(budget.remainingAmount, budget.currency, locale)}
+              {formatAmount(budget.remainingAmount, locale)}
             </p>
           </div>
         </div>
@@ -293,45 +292,51 @@ export function BudgetDetailsPage() {
                             {category.name}
                           </h3>
                           <p className="mt-1 text-sm text-muted-foreground">
-                            {formatMoney(categorySpent, budget.currency, locale)} {t('spent')}
+                            {formatAmount(categorySpent, locale)} {t('spent')}
                           </p>
                         </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {t('Planned')}{' '}
                         <span className="font-semibold text-foreground">
-                          {formatMoney(category.plannedAmount, budget.currency, locale)}
+                          {formatAmount(category.plannedAmount, locale)}
                         </span>
                       </p>
                     </Link>
-                  </div>
-                  <div className="mt-4 flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setEditingCategory(category);
-                        setCategoryFormOpen(true);
-                      }}
-                      aria-label={`${t('Edit category')} ${category.name}`}
-                    >
-                      <Pencil />
-                      {t('Edit')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        deleteMutation.reset();
-                        setDeletingCategory(category);
-                      }}
-                      aria-label={`${t('Delete category')} ${category.name}`}
-                    >
-                      <Trash2 />
-                      {t('Delete')}
-                    </Button>
+                    <Menu.Root>
+                      <Menu.Trigger
+                        aria-label={`${t('Actions for')} ${category.name}`}
+                        render={<Button variant="ghost" size="icon-sm" />}
+                      >
+                        <Ellipsis aria-hidden="true" />
+                      </Menu.Trigger>
+                      <Menu.Portal>
+                        <Menu.Positioner sideOffset={6} align="end" className="z-50">
+                          <Menu.Popup className="min-w-40 rounded-lg border border-border bg-white p-1 shadow-lg outline-none">
+                            <Menu.Item
+                              onClick={() => {
+                                setEditingCategory(category);
+                                setCategoryFormOpen(true);
+                              }}
+                              className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                            >
+                              <Pencil className="size-4" aria-hidden="true" />
+                              {t('Edit')}
+                            </Menu.Item>
+                            <Menu.Item
+                              onClick={() => {
+                                deleteMutation.reset();
+                                setDeletingCategory(category);
+                              }}
+                              className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none data-highlighted:bg-destructive/10"
+                            >
+                              <Trash2 className="size-4" aria-hidden="true" />
+                              {t('Delete')}
+                            </Menu.Item>
+                          </Menu.Popup>
+                        </Menu.Positioner>
+                      </Menu.Portal>
+                    </Menu.Root>
                   </div>
                   <div
                     className="mt-4 h-2 overflow-hidden rounded-full bg-muted"
