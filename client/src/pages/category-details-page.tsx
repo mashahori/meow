@@ -115,6 +115,12 @@ export function CategoryDetailsPage() {
     );
   }
 
+  const categoryPlanned = Number(category.plannedAmount);
+  const categorySpent = Number(category.spentAmount);
+  const spendPercent =
+    categoryPlanned > 0 ? Math.min((categorySpent / categoryPlanned) * 100, 100) : 0;
+  const isOverSpent = categorySpent > categoryPlanned;
+
   return (
     <section className="mx-auto max-w-5xl">
       <Link
@@ -163,6 +169,19 @@ export function CategoryDetailsPage() {
               )}
             </p>
           </div>
+        </div>
+        <div
+          className="mt-5 h-2 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-label={t('Category spent')}
+          aria-valuemin={0}
+          aria-valuemax={categoryPlanned || 1}
+          aria-valuenow={Math.min(Math.max(categorySpent, 0), categoryPlanned || 1)}
+        >
+          <div
+            className={`h-full rounded-full ${isOverSpent ? 'bg-progress-over' : 'bg-progress-ok'}`}
+            style={{ width: `${spendPercent}%` }}
+          />
         </div>
       </header>
 

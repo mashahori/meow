@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import type { Expense } from '../lib/expense-api';
@@ -47,6 +48,14 @@ function getDefaultDate(startDate: string, endDate: string) {
   return localToday < startDate || localToday > endDate ? startDate : localToday;
 }
 
+function getExpenseFormValues(startDate: string, endDate: string, expense?: Expense) {
+  return {
+    amount: expense?.amount ?? '',
+    spentAt: expense?.spentAt ?? getDefaultDate(startDate, endDate),
+    note: expense?.note ?? '',
+  };
+}
+
 export function ExpenseFormDialog({
   budgetId,
   categoryId,
@@ -62,12 +71,9 @@ export function ExpenseFormDialog({
   const expenseFormSchema = createExpenseFormSchema(t);
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
-    defaultValues: {
-      amount: expense?.amount ?? '',
-      spentAt: expense?.spentAt ?? getDefaultDate(startDate, endDate),
-      note: expense?.note ?? '',
-    },
+    defaultValues: getExpenseFormValues(startDate, endDate, expense),
   });
+  const { reset: resetForm } = form;
   const mutation = useMutation({
     mutationFn: async (values: ExpenseFormValues) => {
       const note = values.note.trim();
@@ -94,17 +100,15 @@ export function ExpenseFormDialog({
       onOpenChange(false);
     },
   });
+  const { reset: resetMutation } = mutation;
 
-  // useEffect(() => {
-  //   if (open) {
-  //     form.reset({
-  //       amount: expense?.amount ?? '',
-  //       spentAt: expense?.spentAt ?? getDefaultDate(startDate, endDate),
-  //       note: expense?.note ?? '',
-  //     });
-  //     mutation.reset();
-  //   }
-  // }, [endDate, expense, form, mutation, open, startDate]);
+  // The dialog stays mounted between openings, so each opening must start from the current expense (or empty for a new one).
+  useEffect(() => {
+    if (!open) return;
+
+    resetForm(getExpenseFormValues(startDate, endDate, expense));
+    resetMutation();
+  }, [endDate, expense, open, resetForm, resetMutation, startDate]);
 
   const onSubmit = form.handleSubmit((values) => {
     if (values.spentAt < startDate || values.spentAt > endDate) {
@@ -120,8 +124,7 @@ export function ExpenseFormDialog({
       onOpenChange={(nextOpen) => {
         onOpenChange(nextOpen);
         if (!nextOpen) {
-          form.reset();
-          mutation.reset();
+          resetMutation();
         }
       }}
     >

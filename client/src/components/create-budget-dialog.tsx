@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, CalendarDays, Coins, WalletCards } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import type { Budget } from '../lib/budget-api';
@@ -45,6 +45,16 @@ function getDefaultDates() {
   return { startDate: toDateInput(startDate), endDate: toDateInput(endDate) };
 }
 
+function getBudgetFormValues(budget?: Budget) {
+  return {
+    name: budget?.name ?? '',
+    startDate: budget?.startDate ?? getDefaultDates().startDate,
+    endDate: budget?.endDate ?? getDefaultDates().endDate,
+    initialAmount: budget ? Number(budget.initialAmount) : 0,
+    currency: budget?.currency ?? 'RUB',
+  };
+}
+
 function getErrorMessage(error: unknown, action: 'create' | 'update', t: (text: string) => string) {
   return error instanceof Error
     ? t(error.message)
@@ -75,13 +85,7 @@ export function BudgetFormDialog({
   const budgetFormSchema = createBudgetFormSchema(t);
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
-    defaultValues: {
-      name: budget?.name ?? '',
-      startDate: budget?.startDate ?? getDefaultDates().startDate,
-      endDate: budget?.endDate ?? getDefaultDates().endDate,
-      initialAmount: budget ? Number(budget.initialAmount) : 0,
-      currency: budget?.currency ?? 'RUB',
-    },
+    defaultValues: getBudgetFormValues(budget),
   });
   const mutation = useMutation({
     mutationFn: (values: BudgetFormValues) =>
@@ -96,16 +100,21 @@ export function BudgetFormDialog({
     },
   });
 
+  const { reset: resetForm } = form;
+  const { reset: resetMutation } = mutation;
+
+  // Opening can be triggered by the parent (controlled `open`), so the form must be refilled here.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    resetForm(getBudgetFormValues(budget));
+    resetMutation();
+  }, [budget, isOpen, resetForm, resetMutation]);
+
   const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
   const openDialog = () => {
-    form.reset({
-      name: budget?.name ?? '',
-      startDate: budget?.startDate ?? getDefaultDates().startDate,
-      endDate: budget?.endDate ?? getDefaultDates().endDate,
-      initialAmount: budget ? Number(budget.initialAmount) : 0,
-      currency: budget?.currency ?? 'RUB',
-    });
-    mutation.reset();
+    resetForm(getBudgetFormValues(budget));
+    resetMutation();
     setOpen(true);
   };
   const action = budget ? 'update' : 'create';
