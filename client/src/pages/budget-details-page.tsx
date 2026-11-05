@@ -39,8 +39,10 @@ function formatDate(date: string, locale: string) {
   }).format(new Date(`${date}T00:00:00`));
 }
 
-function formatAmount(amount: string | number, locale: string) {
+function formatAmount(amount: string | number, currency: string, locale: string) {
   return formatNumberWithSpaceGrouping(amount, locale, {
+    style: 'currency',
+    currency,
     maximumFractionDigits: 0,
   });
 }
@@ -129,6 +131,7 @@ export function BudgetDetailsPage() {
   const spent = Number(budget.spentAmount);
   const planned = Number(budget.plannedAmount);
   const spendPercent = planned > 0 ? Math.min((spent / planned) * 100, 100) : 0;
+  const isOverSpent = spent > planned;
 
   return (
     <section className="mx-auto max-w-5xl">
@@ -143,8 +146,8 @@ export function BudgetDetailsPage() {
       <header className="mt-6 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="flex flex-1 items-start gap-4">
-            <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
-              <div>
+            <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-4">
+              <div className="order-1">
                 <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   {t('Budget details')}
                 </p>
@@ -163,37 +166,45 @@ export function BudgetDetailsPage() {
                       : t('Inactive')}
                 </span>
               </div>
-              <Menu.Root>
-                <Menu.Trigger
-                  aria-label={`${t('Actions for')} ${budget.name}`}
-                  render={<Button variant="ghost" size="icon-sm" />}
-                >
-                  <Ellipsis aria-hidden="true" />
-                </Menu.Trigger>
-                <Menu.Portal>
-                  <Menu.Positioner sideOffset={6} align="end" className="z-50">
-                    <Menu.Popup className="min-w-40 rounded-lg border border-border bg-white p-1 shadow-lg outline-none">
-                      <Menu.Item
-                        onClick={() => setBudgetFormOpen(true)}
-                        className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
-                      >
-                        <Pencil className="size-4" aria-hidden="true" />
-                        {t('Edit')}
-                      </Menu.Item>
-                      <Menu.Item
-                        onClick={() => {
-                          deleteBudgetMutation.reset();
-                          setDeleteBudgetDialogOpen(true);
-                        }}
-                        className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none data-highlighted:bg-destructive/10"
-                      >
-                        <Trash2 className="size-4" aria-hidden="true" />
-                        {t('Delete')}
-                      </Menu.Item>
-                    </Menu.Popup>
-                  </Menu.Positioner>
-                </Menu.Portal>
-              </Menu.Root>
+              <div className="order-3 w-full text-left sm:order-2 sm:ml-auto sm:w-auto sm:text-right">
+                <p className="text-sm text-muted-foreground">{t('Starting amount')}</p>
+                <p className="mt-1 font-display text-2xl font-semibold tracking-tight text-foreground">
+                  {formatAmount(budget.initialAmount, budget.currency, locale)}
+                </p>
+              </div>
+              <div className="order-2 shrink-0 sm:order-3">
+                <Menu.Root>
+                  <Menu.Trigger
+                    aria-label={`${t('Actions for')} ${budget.name}`}
+                    render={<Button variant="ghost" size="icon-sm" />}
+                  >
+                    <Ellipsis aria-hidden="true" />
+                  </Menu.Trigger>
+                  <Menu.Portal>
+                    <Menu.Positioner sideOffset={6} align="end" className="z-50">
+                      <Menu.Popup className="min-w-40 rounded-lg border border-border bg-white p-1 shadow-lg outline-none">
+                        <Menu.Item
+                          onClick={() => setBudgetFormOpen(true)}
+                          className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                        >
+                          <Pencil className="size-4" aria-hidden="true" />
+                          {t('Edit')}
+                        </Menu.Item>
+                        <Menu.Item
+                          onClick={() => {
+                            deleteBudgetMutation.reset();
+                            setDeleteBudgetDialogOpen(true);
+                          }}
+                          className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none data-highlighted:bg-destructive/10"
+                        >
+                          <Trash2 className="size-4" aria-hidden="true" />
+                          {t('Delete')}
+                        </Menu.Item>
+                      </Menu.Popup>
+                    </Menu.Positioner>
+                  </Menu.Portal>
+                </Menu.Root>
+              </div>
             </div>
           </div>
           <div className="flex w-full items-center gap-3">
@@ -208,29 +219,23 @@ export function BudgetDetailsPage() {
             </div>
           </div>
         </div>
-        <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border pt-5 sm:grid-cols-4">
-          <div>
-            <p className="text-sm text-muted-foreground">{t('Starting amount')}</p>
-            <p className="mt-1 font-display text-2xl font-semibold tracking-tight text-foreground">
-              {formatAmount(budget.initialAmount, locale)}
-            </p>
-          </div>
+        <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border pt-5 sm:grid-cols-3">
           <div>
             <p className="text-sm text-muted-foreground">{t('Planned')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatAmount(budget.plannedAmount, locale)}
+              {formatAmount(budget.plannedAmount, budget.currency, locale)}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('Spent')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatAmount(budget.spentAmount, locale)}
+              {formatAmount(budget.spentAmount, budget.currency, locale)}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{t('Remaining')}</p>
             <p className="mt-1 font-display text-2xl font-semibold text-foreground">
-              {formatAmount(budget.remainingAmount, locale)}
+              {formatAmount(budget.remainingAmount, budget.currency, locale)}
             </p>
           </div>
         </div>
@@ -242,7 +247,10 @@ export function BudgetDetailsPage() {
           aria-valuemax={planned || 1}
           aria-valuenow={Math.min(Math.max(spent, 0), planned || 1)}
         >
-          <div className="h-full rounded-full bg-progress-fill" style={{ width: `${spendPercent}%` }} />
+          <div
+            className={`h-full rounded-full ${isOverSpent ? 'bg-progress-over' : 'bg-progress-ok'}`}
+            style={{ width: `${spendPercent}%` }}
+          />
         </div>
       </header>
 
@@ -271,6 +279,7 @@ export function BudgetDetailsPage() {
               const categorySpent = Number(category.spentAmount);
               const categoryPercent =
                 categoryPlanned > 0 ? Math.min((categorySpent / categoryPlanned) * 100, 100) : 0;
+              const isCategoryOverSpent = categorySpent > categoryPlanned;
 
               return (
                 <article
@@ -292,14 +301,14 @@ export function BudgetDetailsPage() {
                             {category.name}
                           </h3>
                           <p className="mt-1 text-sm text-muted-foreground">
-                            {formatAmount(categorySpent, locale)} {t('spent')}
+                            {formatAmount(categorySpent, budget.currency, locale)} {t('spent')}
                           </p>
                         </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {t('Planned')}{' '}
                         <span className="font-semibold text-foreground">
-                          {formatAmount(category.plannedAmount, locale)}
+                          {formatAmount(category.plannedAmount, budget.currency, locale)}
                         </span>
                       </p>
                     </Link>
@@ -347,7 +356,7 @@ export function BudgetDetailsPage() {
                     aria-valuenow={Math.min(Math.max(categorySpent, 0), categoryPlanned || 1)}
                   >
                     <div
-                      className="h-full rounded-full bg-progress-fill"
+                      className={`h-full rounded-full ${isCategoryOverSpent ? 'bg-progress-over' : 'bg-progress-ok'}`}
                       style={{ width: `${categoryPercent}%` }}
                     />
                   </div>

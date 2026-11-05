@@ -16,7 +16,7 @@ export type Credentials = {
 
 export { ApiError } from './api-client';
 
-const authNetworkError = 'Не удалось подключиться к серверу. Проверьте его доступность.';
+const authNetworkError = 'Unable to connect to the server. Please check that it is available.';
 
 function postJson(body: Record<string, string>): RequestInit {
   return {
@@ -30,7 +30,7 @@ export async function login(credentials: Credentials): Promise<AuthUser> {
   const response = await requestJson(
     '/api/auth/login',
     authResponseSchema,
-    'Ошибка запроса',
+    'Request failed',
     postJson(credentials),
     authNetworkError,
   );
@@ -41,7 +41,7 @@ export async function register(credentials: Credentials): Promise<void> {
   await requestJson(
     '/api/auth/register',
     authResponseSchema,
-    'Ошибка запроса',
+    'Request failed',
     postJson(credentials),
     authNetworkError,
   );
@@ -50,7 +50,7 @@ export async function register(credentials: Credentials): Promise<void> {
 export async function requestPasswordReset(email: string): Promise<void> {
   await requestVoid(
     '/api/auth/forgot-password',
-    'Ошибка запроса',
+    'Request failed',
     postJson({ email }),
     authNetworkError,
   );
@@ -59,7 +59,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
 export async function resetPassword(token: string, password: string): Promise<void> {
   await requestVoid(
     '/api/auth/reset-password',
-    'Ошибка запроса',
+    'Request failed',
     postJson({ token, password }),
     authNetworkError,
   );
@@ -69,7 +69,7 @@ export async function getCurrentUser(signal?: AbortSignal): Promise<AuthUser> {
   const response = await requestJson(
     '/api/auth/me',
     authResponseSchema,
-    'Ошибка запроса',
+    'Request failed',
     { signal },
     authNetworkError,
   );
@@ -77,5 +77,5 @@ export async function getCurrentUser(signal?: AbortSignal): Promise<AuthUser> {
 }
 
 export async function logout(): Promise<void> {
-  await requestVoid('/api/auth/logout', 'Ошибка запроса', { method: 'POST' }, authNetworkError);
+  await requestVoid('/api/auth/logout', 'Request failed', { method: 'POST' }, authNetworkError);
 }

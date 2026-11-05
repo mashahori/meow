@@ -33,6 +33,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-progress-fill: var(--progress-fill);
+  --color-progress-ok: var(--progress-ok);
+  --color-progress-over: var(--progress-over);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -67,6 +69,8 @@
   --sidebar-border: #d1d9e0;
   --sidebar-ring: #afb8c1;
   --progress-fill: #858b93;
+  --progress-ok: #1a7f37;
+  --progress-over: #cf222e;
   font-family: var(--font-sans);
   color: var(--foreground);
   background: var(--background);
