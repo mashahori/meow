@@ -165,6 +165,33 @@ export async function deleteBudget(budgetId: string, userId: string): Promise<vo
   }
 }
 
+// Archiving and clearing the active budget happen in one statement, so they succeed or fail together.
+export async function archiveBudget(budgetId: string, userId: string): Promise<boolean> {
+  const result = await pool.query(
+    `WITH archived AS (
+       UPDATE budgets SET status = 'archived', updated_at = now()
+       WHERE id = $1 AND user_id = $2
+       RETURNING id
+     ),
+     cleared AS (
+       UPDATE users SET active_budget_id = NULL
+       WHERE id = $2 AND active_budget_id = $1 AND EXISTS (SELECT 1 FROM archived)
+     )
+     SELECT EXISTS (SELECT 1 FROM archived) AS archived`,
+    [budgetId, userId],
+  );
+  return result.rows[0].archived === true;
+}
+
+export async function unarchiveBudget(budgetId: string, userId: string): Promise<boolean> {
+  const result = await pool.query(
+    `UPDATE budgets SET status = 'active', updated_at = now()
+     WHERE id = $1 AND user_id = $2`,
+    [budgetId, userId],
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
 export async function setActiveBudget(userId: string, budgetId: string | null): Promise<void> {
   await pool.query('UPDATE users SET active_budget_id = $2 WHERE id = $1', [userId, budgetId]);
 }

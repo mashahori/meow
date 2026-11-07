@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   CalendarDays,
@@ -20,9 +19,10 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
-import { getBudgetDetails } from '../lib/budget-api';
-import { deleteExpense, getCategoryExpenses, type Expense } from '../lib/expense-api';
+import type { Expense } from '../lib/expense-api';
 import { formatNumberWithSpaceGrouping } from '../lib/number-format';
+import { useBudgetDetailsQuery } from '../hooks/use-budgets';
+import { useCategoryExpensesQuery, useDeleteExpenseMutation } from '../hooks/use-expenses';
 import { useTranslation } from '../contexts/language-context';
 
 function formatDate(date: string, locale: string) {
@@ -47,36 +47,11 @@ export function CategoryDetailsPage() {
   const [expenseFormOpen, setExpenseFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense>();
   const [deletingExpense, setDeletingExpense] = useState<Expense>();
-  const queryClient = useQueryClient();
-  const budgetQuery = useQuery({
-    queryKey: ['budget', budgetId],
-    queryFn: ({ signal }) => {
-      if (!budgetId) throw new Error(t('Budget not found.'));
-      return getBudgetDetails(budgetId, signal);
-    },
-    enabled: Boolean(budgetId),
-  });
+  const budgetQuery = useBudgetDetailsQuery(budgetId);
   const category = budgetQuery.data?.categories.find((item) => item.id === categoryId);
-  const expensesQuery = useQuery({
-    queryKey: ['category-expenses', categoryId],
-    queryFn: ({ signal }) => {
-      if (!categoryId) throw new Error(t('Category not found.'));
-      return getCategoryExpenses(categoryId, signal);
-    },
-    enabled: Boolean(category),
-  });
-  const deleteMutation = useMutation({
-    mutationFn: () => {
-      if (!deletingExpense) throw new Error(t('Expense not found.'));
-      return deleteExpense(deletingExpense.id);
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['category-expenses', categoryId] }),
-        queryClient.invalidateQueries({ queryKey: ['budget', budgetId] }),
-      ]);
-      setDeletingExpense(undefined);
-    },
+  const expensesQuery = useCategoryExpensesQuery(categoryId, Boolean(category));
+  const deleteMutation = useDeleteExpenseMutation(budgetId, categoryId, {
+    onSuccess: () => setDeletingExpense(undefined),
   });
 
   if (budgetQuery.isPending && budgetId) {
@@ -333,7 +308,9 @@ export function CategoryDetailsPage() {
             <Button
               type="button"
               variant="destructive"
-              onClick={() => deleteMutation.mutate()}
+              onClick={() => {
+                if (deletingExpense) deleteMutation.mutate(deletingExpense.id);
+              }}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? (

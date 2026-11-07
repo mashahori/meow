@@ -1,5 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarDays, Ellipsis, Pencil, Trash2 } from 'lucide-react';
+import { Archive, CalendarDays, Ellipsis, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu } from '@base-ui/react/menu';
@@ -13,8 +12,9 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
-import { deleteBudget, getBudgets, type Budget } from '../lib/budget-api';
-import { useAuth } from '../hooks/use-auth';
+import type { Budget } from '../lib/budget-api';
+import { useBudgetsQuery, useDeleteBudgetMutation } from '../hooks/use-budgets';
+import { useBudgetArchiveMutation } from '../hooks/use-budget-archive';
 import { useTranslation } from '../contexts/language-context';
 
 function formatDate(date: string, locale: string) {
@@ -25,24 +25,17 @@ function formatDate(date: string, locale: string) {
   }).format(new Date(`${date}T00:00:00`));
 }
 
-function getErrorMessage(error: unknown, t: (text: string) => string) {
-  return error instanceof Error ? t(error.message) : t('Unable to delete budget.');
+function getErrorMessage(error: unknown, t: (text: string) => string, fallback: string) {
+  return error instanceof Error ? t(error.message) : t(fallback);
 }
 
-function BudgetCard({ budget }: { budget: Budget }) {
+export function BudgetCard({ budget }: { budget: Budget }) {
   const { t, locale } = useTranslation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteBudget(budget.id),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['budgets'] }),
-        queryClient.invalidateQueries({ queryKey: ['budget', budget.id] }),
-      ]);
-      setDeleteDialogOpen(false);
-    },
+  const archiveMutation = useBudgetArchiveMutation(budget.id, budget.status === 'archived');
+  const deleteMutation = useDeleteBudgetMutation({
+    onSuccess: () => setDeleteDialogOpen(false),
   });
 
   return (
@@ -66,6 +59,16 @@ function BudgetCard({ budget }: { budget: Budget }) {
               </Menu.Item>
               <Menu.Item
                 onClick={() => {
+                  archiveMutation.reset();
+                  archiveMutation.mutate();
+                }}
+                className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+              >
+                <Archive className="size-4" aria-hidden="true" />
+                {budget.status === 'archived' ? t('Restore from archive') : t('Archive')}
+              </Menu.Item>
+              <Menu.Item
+                onClick={() => {
                   deleteMutation.reset();
                   setDeleteDialogOpen(true);
                 }}
@@ -78,6 +81,12 @@ function BudgetCard({ budget }: { budget: Budget }) {
           </Menu.Positioner>
         </Menu.Portal>
       </Menu.Root>
+
+      {archiveMutation.isError ? (
+        <p role="alert" className="mb-3 pr-8 text-xs font-medium text-destructive">
+          {getErrorMessage(archiveMutation.error, t, 'Unable to update budget archive.')}
+        </p>
+      ) : null}
 
       <BudgetFormDialog
         budget={budget}
@@ -135,7 +144,7 @@ function BudgetCard({ budget }: { budget: Budget }) {
           </DialogHeader>
           {deleteMutation.isError ? (
             <p role="alert" className="mb-4 text-sm font-medium text-destructive">
-              {getErrorMessage(deleteMutation.error, t)}
+              {getErrorMessage(deleteMutation.error, t, 'Unable to delete budget.')}
             </p>
           ) : null}
           <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
@@ -150,7 +159,7 @@ function BudgetCard({ budget }: { budget: Budget }) {
             <Button
               type="button"
               variant="destructive"
-              onClick={() => deleteMutation.mutate()}
+              onClick={() => deleteMutation.mutate(budget.id)}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? (
@@ -174,12 +183,8 @@ function BudgetCard({ budget }: { budget: Budget }) {
 
 export function BudgetsPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const budgetsQuery = useQuery({
-    queryKey: ['budgets', user?.id],
-    queryFn: ({ signal }) => getBudgets(signal),
-    enabled: user !== null,
-  });
+  const budgetsQuery = useBudgetsQuery();
+  const activeBudgets = budgetsQuery.data?.filter((budget) => budget.status === 'active');
 
   return (
     <section className="mx-auto max-w-5xl">
@@ -219,7 +224,7 @@ export function BudgetsPage() {
           </p>
         ) : null}
 
-        {budgetsQuery.data?.length === 0 ? (
+        {activeBudgets?.length === 0 ? (
           <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-border bg-card px-6 text-center shadow-sm">
             <CalendarDays className="size-9 text-muted-foreground" />
             <h2 className="mt-4 font-display text-xl font-semibold text-foreground">
@@ -231,9 +236,9 @@ export function BudgetsPage() {
           </div>
         ) : null}
 
-        {budgetsQuery.data && budgetsQuery.data.length > 0 ? (
+        {activeBudgets && activeBudgets.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {budgetsQuery.data.map((budget) => (
+            {activeBudgets.map((budget) => (
               <BudgetCard key={budget.id} budget={budget} />
             ))}
           </div>

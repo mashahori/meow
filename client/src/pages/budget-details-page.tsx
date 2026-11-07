@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
+  Archive,
   CalendarDays,
   CircleDollarSign,
   Ellipsis,
@@ -22,13 +22,11 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
-import {
-  deleteBudget,
-  deleteCategory,
-  getBudgetDetails,
-  type BudgetCategory,
-} from '../lib/budget-api';
+import type { BudgetCategory } from '../lib/budget-api';
 import { formatNumberWithSpaceGrouping } from '../lib/number-format';
+import { useBudgetArchiveMutation } from '../hooks/use-budget-archive';
+import { useBudgetDetailsQuery, useDeleteBudgetMutation } from '../hooks/use-budgets';
+import { useDeleteCategoryMutation } from '../hooks/use-budget-categories';
 import { useTranslation } from '../contexts/language-context';
 
 function formatDate(date: string, locale: string) {
@@ -55,42 +53,17 @@ export function BudgetDetailsPage() {
   const [deletingCategory, setDeletingCategory] = useState<BudgetCategory>();
   const [budgetFormOpen, setBudgetFormOpen] = useState(false);
   const [deleteBudgetDialogOpen, setDeleteBudgetDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const budgetQuery = useQuery({
-    queryKey: ['budget', budgetId],
-    queryFn: ({ signal }) => {
-      if (!budgetId) throw new Error(t('Budget not found.'));
-      return getBudgetDetails(budgetId, signal);
-    },
-    enabled: Boolean(budgetId),
+  const budgetQuery = useBudgetDetailsQuery(budgetId);
+  const deleteMutation = useDeleteCategoryMutation(budgetId, {
+    onSuccess: () => setDeletingCategory(undefined),
   });
-  const deleteMutation = useMutation({
-    mutationFn: () => {
-      if (!deletingCategory) throw new Error(t('Category not found.'));
-      return deleteCategory(deletingCategory.id);
-    },
-    onSuccess: async () => {
-      if (budgetId) {
-        await queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      }
-      setDeletingCategory(undefined);
-    },
+  const deleteBudgetMutation = useDeleteBudgetMutation({
+    onSuccess: () => setDeleteBudgetDialogOpen(false),
   });
-  const deleteBudgetMutation = useMutation({
-    mutationFn: () => {
-      if (!budgetId) throw new Error(t('Budget not found.'));
-      return deleteBudget(budgetId);
-    },
-    onSuccess: async () => {
-      if (budgetId) {
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['budgets'] }),
-          queryClient.invalidateQueries({ queryKey: ['budget', budgetId] }),
-        ]);
-      }
-      setDeleteBudgetDialogOpen(false);
-    },
-  });
+  const archiveMutation = useBudgetArchiveMutation(
+    budgetId ?? '',
+    budgetQuery.data?.status === 'archived',
+  );
 
   if (budgetQuery.isPending && budgetId) {
     return (
@@ -192,6 +165,16 @@ export function BudgetDetailsPage() {
                         </Menu.Item>
                         <Menu.Item
                           onClick={() => {
+                            archiveMutation.reset();
+                            archiveMutation.mutate();
+                          }}
+                          className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                        >
+                          <Archive className="size-4" aria-hidden="true" />
+                          {budget.status === 'archived' ? t('Restore from archive') : t('Archive')}
+                        </Menu.Item>
+                        <Menu.Item
+                          onClick={() => {
                             deleteBudgetMutation.reset();
                             setDeleteBudgetDialogOpen(true);
                           }}
@@ -253,6 +236,14 @@ export function BudgetDetailsPage() {
           />
         </div>
       </header>
+
+      {archiveMutation.isError ? (
+        <p role="alert" className="mt-4 text-sm font-medium text-destructive">
+          {archiveMutation.error instanceof Error
+            ? t(archiveMutation.error.message)
+            : t('Unable to update budget archive.')}
+        </p>
+      ) : null}
 
       <section className="mt-9">
         <div className="flex items-end justify-between gap-4">
@@ -425,7 +416,9 @@ export function BudgetDetailsPage() {
             <Button
               type="button"
               variant="destructive"
-              onClick={() => deleteBudgetMutation.mutate()}
+              onClick={() => {
+                if (budgetId) deleteBudgetMutation.mutate(budgetId);
+              }}
               disabled={deleteBudgetMutation.isPending}
             >
               {deleteBudgetMutation.isPending ? (
@@ -479,7 +472,9 @@ export function BudgetDetailsPage() {
             <Button
               type="button"
               variant="destructive"
-              onClick={() => deleteMutation.mutate()}
+              onClick={() => {
+                if (deletingCategory) deleteMutation.mutate(deletingCategory.id);
+              }}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? (

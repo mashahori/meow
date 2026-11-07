@@ -1,16 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, CalendarDays, Coins, WalletCards } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import type { Budget } from '../lib/budget-api';
+import { useSaveBudgetMutation } from '../hooks/use-budgets';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Field } from './ui/field';
 import { Input } from './ui/input';
 import { Spinner } from './ui/spinner';
-import { createBudget, updateBudget } from '../lib/budget-api';
 import { useTranslation } from '../contexts/language-context';
 
 function createBudgetFormSchema(t: (text: string) => string) {
@@ -81,20 +80,13 @@ export function BudgetFormDialog({
     setInternalOpen(nextOpen);
     onOpenChange?.(nextOpen);
   };
-  const queryClient = useQueryClient();
   const budgetFormSchema = createBudgetFormSchema(t);
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: getBudgetFormValues(budget),
   });
-  const mutation = useMutation({
-    mutationFn: (values: BudgetFormValues) =>
-      budget ? updateBudget(budget.id, values) : createBudget(values),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      if (budget) {
-        await queryClient.invalidateQueries({ queryKey: ['budget', budget.id] });
-      }
+  const mutation = useSaveBudgetMutation(budget, {
+    onSuccess: () => {
       setOpen(false);
       form.reset();
     },

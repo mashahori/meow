@@ -1,11 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Coins, Tag } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import type { BudgetCategory, CategoryPayload } from '../lib/budget-api';
-import { createCategory, updateCategory } from '../lib/budget-api';
+import type { BudgetCategory } from '../lib/budget-api';
+import { useSaveCategoryMutation } from '../hooks/use-budget-categories';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Field } from './ui/field';
@@ -40,7 +39,6 @@ export function CategoryFormDialog({
   onOpenChange,
 }: CategoryFormDialogProps) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const categoryFormSchema = createCategoryFormSchema(t);
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
@@ -49,13 +47,8 @@ export function CategoryFormDialog({
       plannedAmount: category?.plannedAmount ?? '',
     },
   });
-  const mutation = useMutation({
-    mutationFn: (payload: CategoryPayload) =>
-      category ? updateCategory(category.id, payload) : createCategory(budgetId, payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      onOpenChange(false);
-    },
+  const mutation = useSaveCategoryMutation(budgetId, category, {
+    onSuccess: () => onOpenChange(false),
   });
   const { reset: resetForm } = form;
   const { reset: resetMutation } = mutation;

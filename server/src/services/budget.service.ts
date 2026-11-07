@@ -4,6 +4,8 @@ import {
   ValidationError,
 } from "../errors/app-error";
 import {
+  archiveBudget as archiveBudgetRecord,
+  unarchiveBudget as unarchiveBudgetRecord,
   BudgetRow,
   CategorySummaryRow,
   deleteBudget,
@@ -78,6 +80,28 @@ export async function removeBudget(
 ): Promise<void> {
   await requireBudget(budgetId, userId);
   await deleteBudget(budgetId, userId);
+}
+
+export async function archiveBudget(
+  budgetId: string,
+  userId: string,
+): Promise<BudgetRow> {
+  const archived = await archiveBudgetRecord(budgetId, userId);
+  if (!archived) {
+    throw new NotFoundError("Budget not found");
+  }
+  return requireBudget(budgetId, userId);
+}
+
+export async function unarchiveBudget(
+  budgetId: string,
+  userId: string,
+): Promise<BudgetRow> {
+  const unarchived = await unarchiveBudgetRecord(budgetId, userId);
+  if (!unarchived) {
+    throw new NotFoundError("Budget not found");
+  }
+  return requireBudget(budgetId, userId);
 }
 
 export async function getActiveBudget(

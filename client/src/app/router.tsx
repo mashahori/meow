@@ -47,6 +47,13 @@ const routes: RouteObject[] = [
             },
           },
           {
+            path: '/archived-budgets',
+            lazy: async () => {
+              const { ArchivedBudgetsPage } = await import('@/pages/archived-budgets-page');
+              return { Component: ArchivedBudgetsPage };
+            },
+          },
+          {
             path: '/budgets/:budgetId/:categoryId',
             lazy: async () => {
               const { CategoryDetailsPage } = await import('@/pages/category-details-page');

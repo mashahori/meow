@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  archiveBudget,
   createBudget,
   createCategory,
   deleteBudget,
   deleteCategory,
   getBudgetDetails,
   getBudgets,
+  unarchiveBudget,
   updateBudget,
   updateCategory,
 } from './budget-api'
@@ -96,6 +98,28 @@ describe('budget API', () => {
     expect(fetchMock).toHaveBeenCalledWith(`/api/budgets/${budgetId}`, {
       credentials: 'include',
       method: 'DELETE',
+    })
+  })
+
+  it('archives a budget', async () => {
+    const archived = { ...budget, status: 'archived', isActive: false }
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(archived)))
+
+    await expect(archiveBudget(budgetId)).resolves.toEqual(archived)
+    expect(fetchMock).toHaveBeenCalledWith(`/api/budgets/${budgetId}/archive`, {
+      credentials: 'include',
+      method: 'POST',
+    })
+  })
+
+  it('restores a budget from the archive', async () => {
+    const restored = { ...budget, status: 'active' }
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(restored)))
+
+    await expect(unarchiveBudget(budgetId)).resolves.toEqual(restored)
+    expect(fetchMock).toHaveBeenCalledWith(`/api/budgets/${budgetId}/unarchive`, {
+      credentials: 'include',
+      method: 'POST',
     })
   })
 

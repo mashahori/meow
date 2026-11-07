@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { pool } from "../../src/db/pool";
 import {
+  archiveBudget,
   deleteBudget,
   isBudgetOwnedByUser,
   listBudgets,
+  unarchiveBudget,
   updateBudget,
 } from "../../src/repositories/budget.repository";
 
@@ -95,6 +97,51 @@ describe("updateBudget", () => {
     expect(sql).toMatch(/initial_amount = COALESCE\(\$6, initial_amount\)/);
     expect(sql).toMatch(/currency = COALESCE\(\$7, currency\)/);
     expect(params).toEqual(["budget-1", "user-1", null, null, null, 10_000, "USD"]);
+  });
+});
+
+describe("archiveBudget", () => {
+  beforeEach(() => {
+    query.mockReset();
+  });
+
+  it("archives the budget and clears the active budget in one statement", async () => {
+    query.mockResolvedValue({ rows: [{ archived: true }] });
+
+    await expect(archiveBudget("budget-1", "user-1")).resolves.toBe(true);
+
+    const [sql, params] = query.mock.calls[0];
+    expect(sql).toMatch(/SET status = 'archived'/);
+    expect(sql).toMatch(/SET active_budget_id = NULL/);
+    expect(params).toEqual(["budget-1", "user-1"]);
+  });
+
+  it("returns false when the budget is not found for the user", async () => {
+    query.mockResolvedValue({ rows: [{ archived: false }] });
+
+    await expect(archiveBudget("budget-1", "user-1")).resolves.toBe(false);
+  });
+});
+
+describe("unarchiveBudget", () => {
+  beforeEach(() => {
+    query.mockReset();
+  });
+
+  it("sets the budget status back to active for the owner", async () => {
+    query.mockResolvedValue({ rows: [], rowCount: 1 });
+
+    await expect(unarchiveBudget("budget-1", "user-1")).resolves.toBe(true);
+
+    const [sql, params] = query.mock.calls[0];
+    expect(sql).toMatch(/SET status = 'active'/);
+    expect(params).toEqual(["budget-1", "user-1"]);
+  });
+
+  it("returns false when the budget is not found for the user", async () => {
+    query.mockResolvedValue({ rows: [], rowCount: 0 });
+
+    await expect(unarchiveBudget("budget-1", "user-1")).resolves.toBe(false);
   });
 });
 
