@@ -4,9 +4,9 @@ import {
   ValidationError,
 } from "../errors/app-error";
 import {
-  archiveBudget,
   BudgetRow,
   CategorySummaryRow,
+  deleteBudget,
   findActiveBudget,
   findBudget,
   getBudgetStatus,
@@ -77,7 +77,7 @@ export async function removeBudget(
   userId: string,
 ): Promise<void> {
   await requireBudget(budgetId, userId);
-  await archiveBudget(budgetId, userId);
+  await deleteBudget(budgetId, userId);
 }
 
 export async function getActiveBudget(

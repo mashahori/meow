@@ -403,7 +403,7 @@ export function BudgetDetailsPage() {
           <DialogHeader>
             <DialogTitle>{t('Delete budget?')}</DialogTitle>
             <DialogDescription>
-              “{budget.name}” {t('will be archived and remain available in your budget history.')}
+              “{budget.name}” {t('will be permanently deleted along with its categories and expenses.')}
             </DialogDescription>
           </DialogHeader>
           {deleteBudgetMutation.isError ? (

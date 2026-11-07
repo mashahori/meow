@@ -54,7 +54,7 @@ const russianTranslations: Record<string, string> = {
   'Start date': 'Дата начала',
   'End date': 'Дата окончания',
   'Delete budget?': 'Удалить бюджет?',
-  'will be archived and remain available in your budget history.': 'будет архивирован и останется доступен в истории бюджетов.',
+  'will be permanently deleted along with its categories and expenses.': 'будет удалён без возможности восстановления вместе с категориями и расходами.',
   Cancel: 'Отмена',
   'Deleting…': 'Удаляем…',
   'Delete budget': 'Удалить бюджет',

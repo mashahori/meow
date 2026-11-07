@@ -1,3 +1,4 @@
+import { PoolClient } from 'pg';
 import { pool } from '../db/pool';
 
 export type BudgetRow = {
@@ -146,15 +147,22 @@ export async function updateBudget(
   return (result.rowCount ?? 0) > 0;
 }
 
-export async function archiveBudget(budgetId: string, userId: string): Promise<void> {
-  await pool.query(
-    "UPDATE budgets SET status = 'archived', updated_at = now() WHERE id = $1 AND user_id = $2",
-    [budgetId, userId],
-  );
-  await pool.query(
-    'UPDATE users SET active_budget_id = NULL WHERE id = $1 AND active_budget_id = $2',
-    [userId, budgetId],
-  );
+// Expenses are removed first because expenses.category_id references categories with ON DELETE RESTRICT.
+// Categories are removed by cascade; users.active_budget_id is cleared by ON DELETE SET NULL.
+export async function deleteBudget(budgetId: string, userId: string): Promise<void> {
+  const client: PoolClient = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query('DELETE FROM expenses WHERE budget_id = $1', [budgetId]);
+    await client.query('DELETE FROM budgets WHERE id = $1 AND user_id = $2', [budgetId, userId]);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function setActiveBudget(userId: string, budgetId: string | null): Promise<void> {

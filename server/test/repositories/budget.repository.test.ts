@@ -1,16 +1,54 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { pool } from "../../src/db/pool";
 import {
+  deleteBudget,
   isBudgetOwnedByUser,
   listBudgets,
   updateBudget,
 } from "../../src/repositories/budget.repository";
 
-jest.mock("../../src/db/pool", () => ({ pool: { query: jest.fn() } }));
+jest.mock("../../src/db/pool", () => ({ pool: { query: jest.fn(), connect: jest.fn() } }));
 
 const query = pool.query as unknown as jest.Mock<
   (sql: string, params: unknown[]) => Promise<{ rows: unknown[]; rowCount?: number }>
 >;
+const connect = pool.connect as unknown as jest.Mock<() => Promise<unknown>>;
+
+describe("deleteBudget", () => {
+  const clientQuery = jest.fn<(sql: string, params?: unknown[]) => Promise<unknown>>();
+  const release = jest.fn();
+
+  beforeEach(() => {
+    clientQuery.mockReset();
+    clientQuery.mockResolvedValue({ rows: [], rowCount: 1 });
+    release.mockReset();
+    connect.mockReset();
+    connect.mockResolvedValue({ query: clientQuery, release });
+  });
+
+  it("hard-deletes expenses and the budget in a transaction", async () => {
+    await deleteBudget("budget-1", "user-1");
+
+    const statements = clientQuery.mock.calls.map(([sql]) => sql);
+    expect(statements[0]).toBe("BEGIN");
+    expect(statements[1]).toMatch(/^DELETE FROM expenses WHERE budget_id = \$1$/);
+    expect(statements[2]).toMatch(/^DELETE FROM budgets WHERE id = \$1 AND user_id = \$2$/);
+    expect(statements[3]).toBe("COMMIT");
+    expect(clientQuery.mock.calls[2][1]).toEqual(["budget-1", "user-1"]);
+    expect(release).toHaveBeenCalled();
+  });
+
+  it("rolls back and rethrows when a statement fails", async () => {
+    clientQuery.mockImplementation(async (sql) => {
+      if (sql.startsWith("DELETE FROM budgets")) throw new Error("boom");
+      return { rows: [], rowCount: 1 };
+    });
+
+    await expect(deleteBudget("budget-1", "user-1")).rejects.toThrow("boom");
+    expect(clientQuery.mock.calls.map(([sql]) => sql)).toContain("ROLLBACK");
+    expect(release).toHaveBeenCalled();
+  });
+});
 
 describe("isBudgetOwnedByUser", () => {
   beforeEach(() => {
