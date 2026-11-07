@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { pool } from "../../src/db/pool";
 import {
   archiveBudget,
+  clearActiveBudget,
   deleteBudget,
   isBudgetOwnedByUser,
   listBudgets,
+  setActiveBudget,
   unarchiveBudget,
   updateBudget,
 } from "../../src/repositories/budget.repository";
@@ -105,14 +107,14 @@ describe("archiveBudget", () => {
     query.mockReset();
   });
 
-  it("archives the budget and clears the active budget in one statement", async () => {
+  it("archives the budget and removes it from the active budgets in one statement", async () => {
     query.mockResolvedValue({ rows: [{ archived: true }] });
 
     await expect(archiveBudget("budget-1", "user-1")).resolves.toBe(true);
 
     const [sql, params] = query.mock.calls[0];
     expect(sql).toMatch(/SET status = 'archived'/);
-    expect(sql).toMatch(/SET active_budget_id = NULL/);
+    expect(sql).toMatch(/DELETE FROM active_budgets/);
     expect(params).toEqual(["budget-1", "user-1"]);
   });
 
@@ -150,12 +152,40 @@ describe("listBudgets", () => {
     query.mockReset();
   });
 
-  it("returns false for isActive when the user has no active budget", async () => {
+  it("computes isActive from the active_budgets table", async () => {
     query.mockResolvedValue({ rows: [{ isActive: false }] });
 
     await expect(listBudgets("user-1")).resolves.toEqual([{ isActive: false }]);
 
     const [sql] = query.mock.calls[0];
-    expect(sql).toMatch(/COALESCE\(u\.active_budget_id = b\.id, FALSE\) AS "isActive"/);
+    expect(sql).toMatch(/EXISTS \(\s*SELECT 1 FROM active_budgets ab/);
+    expect(sql).toMatch(/AS "isActive"/);
+  });
+});
+
+describe("active budgets", () => {
+  beforeEach(() => {
+    query.mockReset();
+  });
+
+  it("adds a budget to the active set without touching other active budgets", async () => {
+    query.mockResolvedValue({ rows: [], rowCount: 1 });
+
+    await setActiveBudget("user-1", "budget-2");
+
+    const [sql, params] = query.mock.calls[0];
+    expect(sql).toMatch(/INSERT INTO active_budgets/);
+    expect(sql).not.toMatch(/DELETE/);
+    expect(params).toEqual(["user-1", "budget-2"]);
+  });
+
+  it("removes only the given budget from the active set", async () => {
+    query.mockResolvedValue({ rows: [], rowCount: 1 });
+
+    await clearActiveBudget("user-1", "budget-2");
+
+    const [sql, params] = query.mock.calls[0];
+    expect(sql).toMatch(/DELETE FROM active_budgets WHERE user_id = \$1 AND budget_id = \$2/);
+    expect(params).toEqual(["user-1", "budget-2"]);
   });
 });

@@ -3,6 +3,7 @@ import {
   activateBudget,
   archiveBudget,
   createBudget,
+  deactivateBudget,
   editBudget,
   getActiveBudget,
   getBudgetDetails,
@@ -82,6 +83,14 @@ export async function unarchive(req: Request, res: Response, next: NextFunction)
 export async function activate(req: Request, res: Response, next: NextFunction) {
   try {
     res.status(200).json(await activateBudget(budgetId(req), userId(req)));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deactivate(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.status(200).json(await deactivateBudget(budgetId(req), userId(req)));
   } catch (error) {
     next(error);
   }

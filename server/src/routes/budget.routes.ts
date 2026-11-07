@@ -3,6 +3,7 @@ import {
   activate,
   archive,
   create,
+  deactivate,
   getActive,
   getOne,
   list,
@@ -35,6 +36,7 @@ router.post("/:budgetId/categories", requireBudgetOwner, createCategory);
 router.get("/:budgetId/expenses", requireBudgetOwner, listExpenses);
 router.post("/:budgetId/expenses", requireBudgetOwner, createExpense);
 router.post("/:budgetId/activate", requireBudgetOwner, activate);
+router.post("/:budgetId/deactivate", requireBudgetOwner, deactivate);
 router.post("/:budgetId/archive", requireBudgetOwner, archive);
 router.post("/:budgetId/unarchive", requireBudgetOwner, unarchive);
 router.get("/:budgetId", requireBudgetOwner, getOne);

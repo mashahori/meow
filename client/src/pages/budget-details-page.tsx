@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   Archive,
   CalendarDays,
+  CircleCheck,
   CircleDollarSign,
   Ellipsis,
   Pencil,
@@ -25,6 +26,7 @@ import { Spinner } from '../components/ui/spinner';
 import type { BudgetCategory } from '../lib/budget-api';
 import { formatNumberWithSpaceGrouping } from '../lib/number-format';
 import { useBudgetArchiveMutation } from '../hooks/use-budget-archive';
+import { useBudgetActiveMutation } from '../hooks/use-budget-active';
 import { useBudgetDetailsQuery, useDeleteBudgetMutation } from '../hooks/use-budgets';
 import { useDeleteCategoryMutation } from '../hooks/use-budget-categories';
 import { useTranslation } from '../contexts/language-context';
@@ -64,6 +66,7 @@ export function BudgetDetailsPage() {
     budgetId ?? '',
     budgetQuery.data?.status === 'archived',
   );
+  const activeMutation = useBudgetActiveMutation(budgetId ?? '', budgetQuery.data?.isActive ?? false);
 
   if (budgetQuery.isPending && budgetId) {
     return (
@@ -163,6 +166,18 @@ export function BudgetDetailsPage() {
                           <Pencil className="size-4" aria-hidden="true" />
                           {t('Edit')}
                         </Menu.Item>
+                        {budget.status === 'active' ? (
+                          <Menu.Item
+                            onClick={() => {
+                              activeMutation.reset();
+                              activeMutation.mutate();
+                            }}
+                            className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                          >
+                            <CircleCheck className="size-4" aria-hidden="true" />
+                            {budget.isActive ? t('Make inactive') : t('Make active')}
+                          </Menu.Item>
+                        ) : null}
                         <Menu.Item
                           onClick={() => {
                             archiveMutation.reset();
@@ -236,6 +251,14 @@ export function BudgetDetailsPage() {
           />
         </div>
       </header>
+
+      {activeMutation.isError ? (
+        <p role="alert" className="mt-4 text-sm font-medium text-destructive">
+          {activeMutation.error instanceof Error
+            ? t(activeMutation.error.message)
+            : t('Unable to update active budget.')}
+        </p>
+      ) : null}
 
       {archiveMutation.isError ? (
         <p role="alert" className="mt-4 text-sm font-medium text-destructive">

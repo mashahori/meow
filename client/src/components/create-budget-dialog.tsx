@@ -140,7 +140,7 @@ export function BudgetFormDialog({
                 : t('Set a name, period and starting amount for your budget.')}
             </DialogDescription>
           </DialogHeader>
-          <form className="space-y-5" onSubmit={onSubmit} noValidate>
+          <form className="w-full min-w-0 space-y-5" onSubmit={onSubmit} noValidate>
             <Field
               label={t('Budget name')}
               htmlFor="budget-name"
@@ -158,7 +158,7 @@ export function BudgetFormDialog({
               </div>
             </Field>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
               <Field
                 label={t('Start date')}
                 htmlFor="budget-start-date"
@@ -168,7 +168,7 @@ export function BudgetFormDialog({
                   <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
                   <Input
                     id="budget-start-date"
-                    className="pl-11"
+                    className="block max-w-full appearance-none pl-11"
                     type="date"
                     {...form.register('startDate')}
                   />
@@ -183,7 +183,7 @@ export function BudgetFormDialog({
                   <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
                   <Input
                     id="budget-end-date"
-                    className="pl-11"
+                    className="block max-w-full appearance-none pl-11"
                     type="date"
                     {...form.register('endDate')}
                   />
@@ -191,7 +191,7 @@ export function BudgetFormDialog({
               </Field>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-[1fr_0.8fr]">
+            <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-[1fr_0.8fr]">
               <Field
                 label={t('Starting amount')}
                 htmlFor="budget-amount"

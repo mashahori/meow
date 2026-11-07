@@ -38,9 +38,10 @@ const BUDGET_SELECT = `
       COALESCE((SELECT SUM(c.planned_amount) FROM categories c WHERE c.budget_id = b.id), 0) -
       COALESCE((SELECT SUM(e.amount) FROM expenses e WHERE e.budget_id = b.id), 0)
     )::numeric(12,0)::text AS "remainingAmount",
-    COALESCE(u.active_budget_id = b.id, FALSE) AS "isActive"
+    EXISTS (
+      SELECT 1 FROM active_budgets ab WHERE ab.budget_id = b.id AND ab.user_id = b.user_id
+    ) AS "isActive"
   FROM budgets b
-  JOIN users u ON u.id = b.user_id
 `;
 
 export async function isBudgetOwnedByUser(budgetId: string, userId: string): Promise<boolean> {
@@ -68,9 +69,14 @@ export async function findBudget(budgetId: string, userId: string): Promise<Budg
   return result.rows[0] ?? null;
 }
 
+// Returns the most recently activated budget among the user's active budgets.
 export async function findActiveBudget(userId: string): Promise<BudgetRow | null> {
   const result = await pool.query(
-    `${BUDGET_SELECT} WHERE b.user_id = $1 AND b.id = u.active_budget_id AND b.status = 'active'`,
+    `${BUDGET_SELECT}
+     JOIN active_budgets ab ON ab.budget_id = b.id AND ab.user_id = b.user_id
+     WHERE b.user_id = $1 AND b.status = 'active'
+     ORDER BY ab.activated_at DESC
+     LIMIT 1`,
     [userId],
   );
   return result.rows[0] ?? null;
@@ -148,7 +154,7 @@ export async function updateBudget(
 }
 
 // Expenses are removed first because expenses.category_id references categories with ON DELETE RESTRICT.
-// Categories are removed by cascade; users.active_budget_id is cleared by ON DELETE SET NULL.
+// Categories and active_budgets rows are removed by cascade.
 export async function deleteBudget(budgetId: string, userId: string): Promise<void> {
   const client: PoolClient = await pool.connect();
 
@@ -165,7 +171,7 @@ export async function deleteBudget(budgetId: string, userId: string): Promise<vo
   }
 }
 
-// Archiving and clearing the active budget happen in one statement, so they succeed or fail together.
+// Archiving and removing the active flag happen in one statement, so they succeed or fail together.
 export async function archiveBudget(budgetId: string, userId: string): Promise<boolean> {
   const result = await pool.query(
     `WITH archived AS (
@@ -174,8 +180,8 @@ export async function archiveBudget(budgetId: string, userId: string): Promise<b
        RETURNING id
      ),
      cleared AS (
-       UPDATE users SET active_budget_id = NULL
-       WHERE id = $2 AND active_budget_id = $1 AND EXISTS (SELECT 1 FROM archived)
+       DELETE FROM active_budgets
+       WHERE user_id = $2 AND budget_id = $1 AND EXISTS (SELECT 1 FROM archived)
      )
      SELECT EXISTS (SELECT 1 FROM archived) AS archived`,
     [budgetId, userId],
@@ -192,8 +198,19 @@ export async function unarchiveBudget(budgetId: string, userId: string): Promise
   return (result.rowCount ?? 0) > 0;
 }
 
-export async function setActiveBudget(userId: string, budgetId: string | null): Promise<void> {
-  await pool.query('UPDATE users SET active_budget_id = $2 WHERE id = $1', [userId, budgetId]);
+export async function setActiveBudget(userId: string, budgetId: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO active_budgets (user_id, budget_id) VALUES ($1, $2)
+     ON CONFLICT (user_id, budget_id) DO UPDATE SET activated_at = now()`,
+    [userId, budgetId],
+  );
+}
+
+export async function clearActiveBudget(userId: string, budgetId: string): Promise<void> {
+  await pool.query('DELETE FROM active_budgets WHERE user_id = $1 AND budget_id = $2', [
+    userId,
+    budgetId,
+  ]);
 }
 
 export async function getBudgetStatus(budgetId: string, userId: string): Promise<string | null> {

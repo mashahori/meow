@@ -8,6 +8,8 @@ import {
   getBudgetDetails,
   getBudgets,
   unarchiveBudget,
+  activateBudget,
+  deactivateBudget,
   updateBudget,
   updateCategory,
 } from './budget-api'
@@ -121,6 +123,20 @@ describe('budget API', () => {
       credentials: 'include',
       method: 'POST',
     })
+  })
+
+  it('makes a budget active and inactive', async () => {
+    const inactive = { ...budget, isActive: false }
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify(budget)))
+      .mockResolvedValueOnce(new Response(JSON.stringify(inactive)))
+
+    await expect(activateBudget(budgetId)).resolves.toEqual(budget)
+    await expect(deactivateBudget(budgetId)).resolves.toEqual(inactive)
+    expect(fetchMock.mock.calls.map(([url, init]) => [url, init?.method])).toEqual([
+      [`/api/budgets/${budgetId}/activate`, 'POST'],
+      [`/api/budgets/${budgetId}/deactivate`, 'POST'],
+    ])
   })
 
   it('creates and updates categories with the expected routes', async () => {

@@ -112,7 +112,7 @@ export function ExpenseFormDialog({
               : t('Record a new expense in this category.')}
           </DialogDescription>
         </DialogHeader>
-        <form className="space-y-5" onSubmit={onSubmit} noValidate>
+        <form className="w-full min-w-0 space-y-5" onSubmit={onSubmit} noValidate>
           <Field
             label={`${t('Amount')} (${currency})`}
             htmlFor="expense-amount"
@@ -148,6 +148,7 @@ export function ExpenseFormDialog({
               type="date"
               min={startDate}
               max={endDate}
+              className="block max-w-full appearance-none"
               {...form.register('spentAt')}
             />
           </Field>

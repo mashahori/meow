@@ -115,6 +115,24 @@ export function unarchiveBudget(budgetId: string): Promise<Budget> {
   );
 }
 
+export function activateBudget(budgetId: string): Promise<Budget> {
+  return requestJson(
+    `/api/budgets/${budgetId}/activate`,
+    budgetSchema,
+    'Unable to activate budget',
+    { method: 'POST' },
+  );
+}
+
+export function deactivateBudget(budgetId: string): Promise<Budget> {
+  return requestJson(
+    `/api/budgets/${budgetId}/deactivate`,
+    budgetSchema,
+    'Unable to deactivate budget',
+    { method: 'POST' },
+  );
+}
+
 export function createCategory(budgetId: string, payload: CategoryPayload): Promise<Category> {
   return requestJson(
     `/api/budgets/${budgetId}/categories`,

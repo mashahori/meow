@@ -1,4 +1,4 @@
-import { Archive, CalendarDays, Ellipsis, Pencil, Trash2 } from 'lucide-react';
+import { Archive, CalendarDays, CircleCheck, Ellipsis, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu } from '@base-ui/react/menu';
@@ -15,6 +15,7 @@ import { Spinner } from '../components/ui/spinner';
 import type { Budget } from '../lib/budget-api';
 import { useBudgetsQuery, useDeleteBudgetMutation } from '../hooks/use-budgets';
 import { useBudgetArchiveMutation } from '../hooks/use-budget-archive';
+import { useBudgetActiveMutation } from '../hooks/use-budget-active';
 import { useTranslation } from '../contexts/language-context';
 
 function formatDate(date: string, locale: string) {
@@ -34,6 +35,7 @@ export function BudgetCard({ budget }: { budget: Budget }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const archiveMutation = useBudgetArchiveMutation(budget.id, budget.status === 'archived');
+  const activeMutation = useBudgetActiveMutation(budget.id, budget.isActive);
   const deleteMutation = useDeleteBudgetMutation({
     onSuccess: () => setDeleteDialogOpen(false),
   });
@@ -57,6 +59,18 @@ export function BudgetCard({ budget }: { budget: Budget }) {
                 <Pencil className="size-4" aria-hidden="true" />
                 {t('Edit')}
               </Menu.Item>
+              {budget.status === 'active' ? (
+                <Menu.Item
+                  onClick={() => {
+                    activeMutation.reset();
+                    activeMutation.mutate();
+                  }}
+                  className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                >
+                  <CircleCheck className="size-4" aria-hidden="true" />
+                  {budget.isActive ? t('Make inactive') : t('Make active')}
+                </Menu.Item>
+              ) : null}
               <Menu.Item
                 onClick={() => {
                   archiveMutation.reset();
@@ -81,6 +95,12 @@ export function BudgetCard({ budget }: { budget: Budget }) {
           </Menu.Positioner>
         </Menu.Portal>
       </Menu.Root>
+
+      {activeMutation.isError ? (
+        <p role="alert" className="mb-3 pr-8 text-xs font-medium text-destructive">
+          {getErrorMessage(activeMutation.error, t, 'Unable to update active budget.')}
+        </p>
+      ) : null}
 
       {archiveMutation.isError ? (
         <p role="alert" className="mb-3 pr-8 text-xs font-medium text-destructive">

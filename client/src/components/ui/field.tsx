@@ -9,7 +9,7 @@ type FieldProps = {
 
 export function Field({ label, error, htmlFor, children }: FieldProps) {
   return (
-    <div className={`space-y-2 ${error ? '[&_input]:border-[#d1242f] [&_input]:bg-[#ffebe9] [&_input:focus]:border-[#d1242f]' : ''}`}>
+    <div className={`w-full min-w-0 space-y-2 ${error ? '[&_input]:border-[#d1242f] [&_input]:bg-[#ffebe9] [&_input:focus]:border-[#d1242f]' : ''}`}>
       <label htmlFor={htmlFor} className="block text-sm font-medium text-foreground">
         {label}
       </label>

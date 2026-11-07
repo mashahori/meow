@@ -63,5 +63,9 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   expires_at timestamptz NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-ALTER TABLE users
-  ADD COLUMN IF NOT EXISTS active_budget_id uuid REFERENCES budgets(id) ON DELETE SET NULL;
+CREATE TABLE IF NOT EXISTS active_budgets (
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  budget_id uuid NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
+  activated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, budget_id)
+);

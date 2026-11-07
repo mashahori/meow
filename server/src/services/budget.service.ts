@@ -8,6 +8,7 @@ import {
   unarchiveBudget as unarchiveBudgetRecord,
   BudgetRow,
   CategorySummaryRow,
+  clearActiveBudget,
   deleteBudget,
   findActiveBudget,
   findBudget,
@@ -51,10 +52,6 @@ export async function createBudget(
   payload: CreateBudgetPayload,
 ): Promise<BudgetRow> {
   const id = await insertBudget(userId, payload);
-  // The first budget becomes active automatically.
-  if (!(await findActiveBudget(userId))) {
-    await setActiveBudget(userId, id);
-  }
   return requireBudget(id, userId);
 }
 
@@ -101,6 +98,15 @@ export async function unarchiveBudget(
   if (!unarchived) {
     throw new NotFoundError("Budget not found");
   }
+  return requireBudget(budgetId, userId);
+}
+
+export async function deactivateBudget(
+  budgetId: string,
+  userId: string,
+): Promise<BudgetRow> {
+  await requireBudget(budgetId, userId);
+  await clearActiveBudget(userId, budgetId);
   return requireBudget(budgetId, userId);
 }
 
