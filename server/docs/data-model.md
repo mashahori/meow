@@ -25,6 +25,16 @@
 | created_at     | timestamp     | not null              |
 | updated_at     | timestamp     | not null              |
 
+## Active budget
+
+| Поле         | Тип       | Ограничения                        |
+| ------------ | --------- | ---------------------------------- |
+| user_id      | UUID      | FK -> users.id, part of primary key |
+| budget_id    | UUID      | FK -> budgets.id, part of primary key |
+| activated_at | timestamp | not null                           |
+
+Первичный ключ: `(user_id, budget_id)`. У пользователя может быть несколько активных бюджетов.
+
 ## Currency
 
 | Поле   | Тип          | Ограничения           |

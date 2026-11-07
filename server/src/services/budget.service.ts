@@ -4,9 +4,13 @@ import {
   ValidationError,
 } from "../errors/app-error";
 import {
-  archiveBudget,
+  archiveBudget as archiveBudgetRecord,
+  cloneBudget as cloneBudgetRecord,
+  unarchiveBudget as unarchiveBudgetRecord,
   BudgetRow,
   CategorySummaryRow,
+  clearActiveBudget,
+  deleteBudget,
   findActiveBudget,
   findBudget,
   getBudgetStatus,
@@ -49,10 +53,6 @@ export async function createBudget(
   payload: CreateBudgetPayload,
 ): Promise<BudgetRow> {
   const id = await insertBudget(userId, payload);
-  // The first budget becomes active automatically.
-  if (!(await findActiveBudget(userId))) {
-    await setActiveBudget(userId, id);
-  }
   return requireBudget(id, userId);
 }
 
@@ -77,7 +77,49 @@ export async function removeBudget(
   userId: string,
 ): Promise<void> {
   await requireBudget(budgetId, userId);
-  await archiveBudget(budgetId, userId);
+  await deleteBudget(budgetId, userId);
+}
+
+export async function archiveBudget(
+  budgetId: string,
+  userId: string,
+): Promise<BudgetRow> {
+  const archived = await archiveBudgetRecord(budgetId, userId);
+  if (!archived) {
+    throw new NotFoundError("Budget not found");
+  }
+  return requireBudget(budgetId, userId);
+}
+
+export async function cloneBudget(
+  budgetId: string,
+  userId: string,
+): Promise<BudgetRow> {
+  const clonedId = await cloneBudgetRecord(budgetId, userId);
+  if (!clonedId) {
+    throw new NotFoundError("Budget not found");
+  }
+  return requireBudget(clonedId, userId);
+}
+
+export async function unarchiveBudget(
+  budgetId: string,
+  userId: string,
+): Promise<BudgetRow> {
+  const unarchived = await unarchiveBudgetRecord(budgetId, userId);
+  if (!unarchived) {
+    throw new NotFoundError("Budget not found");
+  }
+  return requireBudget(budgetId, userId);
+}
+
+export async function deactivateBudget(
+  budgetId: string,
+  userId: string,
+): Promise<BudgetRow> {
+  await requireBudget(budgetId, userId);
+  await clearActiveBudget(userId, budgetId);
+  return requireBudget(budgetId, userId);
 }
 
 export async function getActiveBudget(

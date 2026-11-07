@@ -1,16 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, CalendarDays, Coins, WalletCards } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import type { Budget } from '../lib/budget-api';
+import { useSaveBudgetMutation } from '../hooks/use-budgets';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Field } from './ui/field';
 import { Input } from './ui/input';
 import { Spinner } from './ui/spinner';
-import { createBudget, updateBudget } from '../lib/budget-api';
 import { useTranslation } from '../contexts/language-context';
 
 function createBudgetFormSchema(t: (text: string) => string) {
@@ -81,20 +80,13 @@ export function BudgetFormDialog({
     setInternalOpen(nextOpen);
     onOpenChange?.(nextOpen);
   };
-  const queryClient = useQueryClient();
   const budgetFormSchema = createBudgetFormSchema(t);
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: getBudgetFormValues(budget),
   });
-  const mutation = useMutation({
-    mutationFn: (values: BudgetFormValues) =>
-      budget ? updateBudget(budget.id, values) : createBudget(values),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      if (budget) {
-        await queryClient.invalidateQueries({ queryKey: ['budget', budget.id] });
-      }
+  const mutation = useSaveBudgetMutation(budget, {
+    onSuccess: () => {
       setOpen(false);
       form.reset();
     },
@@ -148,7 +140,7 @@ export function BudgetFormDialog({
                 : t('Set a name, period and starting amount for your budget.')}
             </DialogDescription>
           </DialogHeader>
-          <form className="space-y-5" onSubmit={onSubmit} noValidate>
+          <form className="w-full min-w-0 space-y-5" onSubmit={onSubmit} noValidate>
             <Field
               label={t('Budget name')}
               htmlFor="budget-name"
@@ -166,7 +158,7 @@ export function BudgetFormDialog({
               </div>
             </Field>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
               <Field
                 label={t('Start date')}
                 htmlFor="budget-start-date"
@@ -176,7 +168,7 @@ export function BudgetFormDialog({
                   <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
                   <Input
                     id="budget-start-date"
-                    className="pl-11"
+                    className="block max-w-full appearance-none pl-11"
                     type="date"
                     {...form.register('startDate')}
                   />
@@ -191,7 +183,7 @@ export function BudgetFormDialog({
                   <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
                   <Input
                     id="budget-end-date"
-                    className="pl-11"
+                    className="block max-w-full appearance-none pl-11"
                     type="date"
                     {...form.register('endDate')}
                   />
@@ -199,7 +191,7 @@ export function BudgetFormDialog({
               </Field>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-[1fr_0.8fr]">
+            <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-[1fr_0.8fr]">
               <Field
                 label={t('Starting amount')}
                 htmlFor="budget-amount"

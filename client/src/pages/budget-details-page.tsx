@@ -1,15 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
+  Archive,
   CalendarDays,
+  CircleCheck,
   CircleDollarSign,
+  Copy,
   Ellipsis,
   Pencil,
   Plus,
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Menu } from '@base-ui/react/menu';
 import { CategoryFormDialog } from '../components/category-form-dialog';
 import { BudgetFormDialog } from '../components/create-budget-dialog';
@@ -22,13 +24,13 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
-import {
-  deleteBudget,
-  deleteCategory,
-  getBudgetDetails,
-  type BudgetCategory,
-} from '../lib/budget-api';
+import type { BudgetCategory } from '../lib/budget-api';
 import { formatNumberWithSpaceGrouping } from '../lib/number-format';
+import { useBudgetArchiveMutation } from '../hooks/use-budget-archive';
+import { useBudgetActiveMutation } from '../hooks/use-budget-active';
+import { useBudgetCloneMutation } from '../hooks/use-budget-clone';
+import { useBudgetDetailsQuery, useDeleteBudgetMutation } from '../hooks/use-budgets';
+import { useDeleteCategoryMutation } from '../hooks/use-budget-categories';
 import { useTranslation } from '../contexts/language-context';
 
 function formatDate(date: string, locale: string) {
@@ -50,47 +52,25 @@ function formatAmount(amount: string | number, currency: string, locale: string)
 export function BudgetDetailsPage() {
   const { t, locale } = useTranslation();
   const { budgetId } = useParams();
+  const navigate = useNavigate();
   const [categoryFormOpen, setCategoryFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<BudgetCategory>();
   const [deletingCategory, setDeletingCategory] = useState<BudgetCategory>();
   const [budgetFormOpen, setBudgetFormOpen] = useState(false);
   const [deleteBudgetDialogOpen, setDeleteBudgetDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const budgetQuery = useQuery({
-    queryKey: ['budget', budgetId],
-    queryFn: ({ signal }) => {
-      if (!budgetId) throw new Error(t('Budget not found.'));
-      return getBudgetDetails(budgetId, signal);
-    },
-    enabled: Boolean(budgetId),
+  const budgetQuery = useBudgetDetailsQuery(budgetId);
+  const deleteMutation = useDeleteCategoryMutation(budgetId, {
+    onSuccess: () => setDeletingCategory(undefined),
   });
-  const deleteMutation = useMutation({
-    mutationFn: () => {
-      if (!deletingCategory) throw new Error(t('Category not found.'));
-      return deleteCategory(deletingCategory.id);
-    },
-    onSuccess: async () => {
-      if (budgetId) {
-        await queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      }
-      setDeletingCategory(undefined);
-    },
+  const deleteBudgetMutation = useDeleteBudgetMutation({
+    onSuccess: () => setDeleteBudgetDialogOpen(false),
   });
-  const deleteBudgetMutation = useMutation({
-    mutationFn: () => {
-      if (!budgetId) throw new Error(t('Budget not found.'));
-      return deleteBudget(budgetId);
-    },
-    onSuccess: async () => {
-      if (budgetId) {
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['budgets'] }),
-          queryClient.invalidateQueries({ queryKey: ['budget', budgetId] }),
-        ]);
-      }
-      setDeleteBudgetDialogOpen(false);
-    },
-  });
+  const archiveMutation = useBudgetArchiveMutation(
+    budgetId ?? '',
+    budgetQuery.data?.status === 'archived',
+  );
+  const activeMutation = useBudgetActiveMutation(budgetId ?? '', budgetQuery.data?.isActive ?? false);
+  const cloneMutation = useBudgetCloneMutation(budgetId ?? '');
 
   if (budgetQuery.isPending && budgetId) {
     return (
@@ -192,6 +172,40 @@ export function BudgetDetailsPage() {
                         </Menu.Item>
                         <Menu.Item
                           onClick={() => {
+                            cloneMutation.reset();
+                            cloneMutation.mutate(undefined, {
+                              onSuccess: (clonedBudget) => navigate(`/budgets/${clonedBudget.id}`),
+                            });
+                          }}
+                          className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                        >
+                          <Copy className="size-4" aria-hidden="true" />
+                          {t('Clone')}
+                        </Menu.Item>
+                        {budget.status === 'active' ? (
+                          <Menu.Item
+                            onClick={() => {
+                              activeMutation.reset();
+                              activeMutation.mutate();
+                            }}
+                            className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                          >
+                            <CircleCheck className="size-4" aria-hidden="true" />
+                            {budget.isActive ? t('Make inactive') : t('Make active')}
+                          </Menu.Item>
+                        ) : null}
+                        <Menu.Item
+                          onClick={() => {
+                            archiveMutation.reset();
+                            archiveMutation.mutate();
+                          }}
+                          className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                        >
+                          <Archive className="size-4" aria-hidden="true" />
+                          {budget.status === 'archived' ? t('Restore from archive') : t('Archive')}
+                        </Menu.Item>
+                        <Menu.Item
+                          onClick={() => {
                             deleteBudgetMutation.reset();
                             setDeleteBudgetDialogOpen(true);
                           }}
@@ -254,6 +268,30 @@ export function BudgetDetailsPage() {
         </div>
       </header>
 
+      {activeMutation.isError ? (
+        <p role="alert" className="mt-4 text-sm font-medium text-destructive">
+          {activeMutation.error instanceof Error
+            ? t(activeMutation.error.message)
+            : t('Unable to update active budget.')}
+        </p>
+      ) : null}
+
+      {archiveMutation.isError ? (
+        <p role="alert" className="mt-4 text-sm font-medium text-destructive">
+          {archiveMutation.error instanceof Error
+            ? t(archiveMutation.error.message)
+            : t('Unable to update budget archive.')}
+        </p>
+      ) : null}
+
+      {cloneMutation.isError ? (
+        <p role="alert" className="mt-4 text-sm font-medium text-destructive">
+          {cloneMutation.error instanceof Error
+            ? t(cloneMutation.error.message)
+            : t('Unable to clone budget.')}
+        </p>
+      ) : null}
+
       <section className="mt-9">
         <div className="flex items-end justify-between gap-4">
           <div className="mb-4">
@@ -300,12 +338,18 @@ export function BudgetDetailsPage() {
                           <h3 className="font-semibold text-foreground group-hover:text-primary">
                             {category.name}
                           </h3>
+                          <p className="mt-1 text-sm text-muted-foreground sm:hidden">
+                            {t('Planned')}{' '}
+                            <span className="font-semibold text-foreground">
+                              {formatAmount(category.plannedAmount, budget.currency, locale)}
+                            </span>
+                          </p>
                           <p className="mt-1 text-sm text-muted-foreground">
                             {formatAmount(categorySpent, budget.currency, locale)} {t('spent')}
                           </p>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="hidden text-sm text-muted-foreground sm:block">
                         {t('Planned')}{' '}
                         <span className="font-semibold text-foreground">
                           {formatAmount(category.plannedAmount, budget.currency, locale)}
@@ -403,7 +447,7 @@ export function BudgetDetailsPage() {
           <DialogHeader>
             <DialogTitle>{t('Delete budget?')}</DialogTitle>
             <DialogDescription>
-              “{budget.name}” {t('will be archived and remain available in your budget history.')}
+              “{budget.name}” {t('will be permanently deleted along with its categories and expenses.')}
             </DialogDescription>
           </DialogHeader>
           {deleteBudgetMutation.isError ? (
@@ -425,7 +469,9 @@ export function BudgetDetailsPage() {
             <Button
               type="button"
               variant="destructive"
-              onClick={() => deleteBudgetMutation.mutate()}
+              onClick={() => {
+                if (budgetId) deleteBudgetMutation.mutate(budgetId);
+              }}
               disabled={deleteBudgetMutation.isPending}
             >
               {deleteBudgetMutation.isPending ? (
@@ -479,7 +525,9 @@ export function BudgetDetailsPage() {
             <Button
               type="button"
               variant="destructive"
-              onClick={() => deleteMutation.mutate()}
+              onClick={() => {
+                if (deletingCategory) deleteMutation.mutate(deletingCategory.id);
+              }}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? (

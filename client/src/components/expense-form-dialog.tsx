@@ -1,10 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import type { Expense } from '../lib/expense-api';
-import { createExpense, updateExpense, type CreateExpensePayload } from '../lib/expense-api';
+import { useSaveExpenseMutation } from '../hooks/use-expenses';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Field } from './ui/field';
@@ -67,38 +66,14 @@ export function ExpenseFormDialog({
   onOpenChange,
 }: ExpenseFormDialogProps) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const expenseFormSchema = createExpenseFormSchema(t);
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: getExpenseFormValues(startDate, endDate, expense),
   });
   const { reset: resetForm } = form;
-  const mutation = useMutation({
-    mutationFn: async (values: ExpenseFormValues) => {
-      const note = values.note.trim();
-      if (expense) {
-        return updateExpense(expense.id, {
-          amount: values.amount,
-          spentAt: values.spentAt,
-          note: note || null,
-        });
-      }
-      const payload: CreateExpensePayload = {
-        categoryId,
-        amount: values.amount,
-        spentAt: values.spentAt,
-        ...(note ? { note } : {}),
-      };
-      return createExpense(budgetId, payload);
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['category-expenses', categoryId] }),
-        queryClient.invalidateQueries({ queryKey: ['budget', budgetId] }),
-      ]);
-      onOpenChange(false);
-    },
+  const mutation = useSaveExpenseMutation(budgetId, categoryId, expense, {
+    onSuccess: () => onOpenChange(false),
   });
   const { reset: resetMutation } = mutation;
 
@@ -137,7 +112,7 @@ export function ExpenseFormDialog({
               : t('Record a new expense in this category.')}
           </DialogDescription>
         </DialogHeader>
-        <form className="space-y-5" onSubmit={onSubmit} noValidate>
+        <form className="w-full min-w-0 space-y-5" onSubmit={onSubmit} noValidate>
           <Field
             label={`${t('Amount')} (${currency})`}
             htmlFor="expense-amount"
@@ -173,6 +148,7 @@ export function ExpenseFormDialog({
               type="date"
               min={startDate}
               max={endDate}
+              className="block max-w-full appearance-none"
               {...form.register('spentAt')}
             />
           </Field>

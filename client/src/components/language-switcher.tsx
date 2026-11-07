@@ -15,7 +15,7 @@ export function LanguageSwitcher() {
           type="button"
           aria-pressed={language === option}
           onClick={() => setLanguage(option)}
-          className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+          className={`cursor-pointer rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
             language === option
               ? 'bg-primary text-primary-foreground'
               : 'text-muted-foreground hover:bg-muted'

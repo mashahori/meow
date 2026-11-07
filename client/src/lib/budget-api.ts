@@ -97,6 +97,51 @@ export function deleteBudget(budgetId: string): Promise<void> {
   });
 }
 
+export function archiveBudget(budgetId: string): Promise<Budget> {
+  return requestJson(
+    `/api/budgets/${budgetId}/archive`,
+    budgetSchema,
+    'Unable to archive budget',
+    { method: 'POST' },
+  );
+}
+
+export function unarchiveBudget(budgetId: string): Promise<Budget> {
+  return requestJson(
+    `/api/budgets/${budgetId}/unarchive`,
+    budgetSchema,
+    'Unable to restore budget',
+    { method: 'POST' },
+  );
+}
+
+export function cloneBudget(budgetId: string): Promise<Budget> {
+  return requestJson(
+    `/api/budgets/${budgetId}/clone`,
+    budgetSchema,
+    'Unable to clone budget',
+    { method: 'POST' },
+  );
+}
+
+export function activateBudget(budgetId: string): Promise<Budget> {
+  return requestJson(
+    `/api/budgets/${budgetId}/activate`,
+    budgetSchema,
+    'Unable to activate budget',
+    { method: 'POST' },
+  );
+}
+
+export function deactivateBudget(budgetId: string): Promise<Budget> {
+  return requestJson(
+    `/api/budgets/${budgetId}/deactivate`,
+    budgetSchema,
+    'Unable to deactivate budget',
+    { method: 'POST' },
+  );
+}
+
 export function createCategory(budgetId: string, payload: CategoryPayload): Promise<Category> {
   return requestJson(
     `/api/budgets/${budgetId}/categories`,

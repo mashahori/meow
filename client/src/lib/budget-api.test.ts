@@ -1,11 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  archiveBudget,
+  cloneBudget,
   createBudget,
   createCategory,
   deleteBudget,
   deleteCategory,
   getBudgetDetails,
   getBudgets,
+  unarchiveBudget,
+  activateBudget,
+  deactivateBudget,
   updateBudget,
   updateCategory,
 } from './budget-api'
@@ -97,6 +102,53 @@ describe('budget API', () => {
       credentials: 'include',
       method: 'DELETE',
     })
+  })
+
+  it('archives a budget', async () => {
+    const archived = { ...budget, status: 'archived', isActive: false }
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(archived)))
+
+    await expect(archiveBudget(budgetId)).resolves.toEqual(archived)
+    expect(fetchMock).toHaveBeenCalledWith(`/api/budgets/${budgetId}/archive`, {
+      credentials: 'include',
+      method: 'POST',
+    })
+  })
+
+  it('restores a budget from the archive', async () => {
+    const restored = { ...budget, status: 'active' }
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(restored)))
+
+    await expect(unarchiveBudget(budgetId)).resolves.toEqual(restored)
+    expect(fetchMock).toHaveBeenCalledWith(`/api/budgets/${budgetId}/unarchive`, {
+      credentials: 'include',
+      method: 'POST',
+    })
+  })
+
+  it('clones a budget', async () => {
+    const cloned = { ...budget, id: '0b7f3c52-3d6e-4f0a-9d1e-8a2b6c4e7f10', name: 'Household (копия)' }
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(cloned), { status: 201 }))
+
+    await expect(cloneBudget(budgetId)).resolves.toEqual(cloned)
+    expect(fetchMock).toHaveBeenCalledWith(`/api/budgets/${budgetId}/clone`, {
+      credentials: 'include',
+      method: 'POST',
+    })
+  })
+
+  it('makes a budget active and inactive', async () => {
+    const inactive = { ...budget, isActive: false }
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify(budget)))
+      .mockResolvedValueOnce(new Response(JSON.stringify(inactive)))
+
+    await expect(activateBudget(budgetId)).resolves.toEqual(budget)
+    await expect(deactivateBudget(budgetId)).resolves.toEqual(inactive)
+    expect(fetchMock.mock.calls.map(([url, init]) => [url, init?.method])).toEqual([
+      [`/api/budgets/${budgetId}/activate`, 'POST'],
+      [`/api/budgets/${budgetId}/deactivate`, 'POST'],
+    ])
   })
 
   it('creates and updates categories with the expected routes', async () => {
