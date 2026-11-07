@@ -154,13 +154,19 @@ export async function updateBudget(
 }
 
 // Expenses are removed first because expenses.category_id references categories with ON DELETE RESTRICT.
-// Categories and active_budgets rows are removed by cascade.
+// Categories and active_budgets rows are removed by cascade (categories.budget_id ON DELETE CASCADE).
+// The expense delete is scoped to the owner so nothing is removed for a budget the user does not own.
 export async function deleteBudget(budgetId: string, userId: string): Promise<void> {
   const client: PoolClient = await pool.connect();
 
   try {
     await client.query("BEGIN");
-    await client.query('DELETE FROM expenses WHERE budget_id = $1', [budgetId]);
+    await client.query(
+      `DELETE FROM expenses e
+       WHERE e.budget_id = $1
+         AND EXISTS (SELECT 1 FROM budgets b WHERE b.id = $1 AND b.user_id = $2)`,
+      [budgetId, userId],
+    );
     await client.query('DELETE FROM budgets WHERE id = $1 AND user_id = $2', [budgetId, userId]);
     await client.query("COMMIT");
   } catch (error) {

@@ -35,7 +35,9 @@ describe("deleteBudget", () => {
 
     const statements = clientQuery.mock.calls.map(([sql]) => sql);
     expect(statements[0]).toBe("BEGIN");
-    expect(statements[1]).toMatch(/^DELETE FROM expenses WHERE budget_id = \$1$/);
+    expect(statements[1]).toMatch(/^DELETE FROM expenses e/);
+    expect(statements[1]).toMatch(/EXISTS \(SELECT 1 FROM budgets b WHERE b\.id = \$1 AND b\.user_id = \$2\)/);
+    expect(clientQuery.mock.calls[1][1]).toEqual(["budget-1", "user-1"]);
     expect(statements[2]).toMatch(/^DELETE FROM budgets WHERE id = \$1 AND user_id = \$2$/);
     expect(statements[3]).toBe("COMMIT");
     expect(clientQuery.mock.calls[2][1]).toEqual(["budget-1", "user-1"]);

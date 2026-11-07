@@ -338,12 +338,18 @@ export function BudgetDetailsPage() {
                           <h3 className="font-semibold text-foreground group-hover:text-primary">
                             {category.name}
                           </h3>
+                          <p className="mt-1 text-sm text-muted-foreground sm:hidden">
+                            {t('Planned')}{' '}
+                            <span className="font-semibold text-foreground">
+                              {formatAmount(category.plannedAmount, budget.currency, locale)}
+                            </span>
+                          </p>
                           <p className="mt-1 text-sm text-muted-foreground">
                             {formatAmount(categorySpent, budget.currency, locale)} {t('spent')}
                           </p>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="hidden text-sm text-muted-foreground sm:block">
                         {t('Planned')}{' '}
                         <span className="font-semibold text-foreground">
                           {formatAmount(category.plannedAmount, budget.currency, locale)}
