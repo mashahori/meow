@@ -114,7 +114,7 @@ export function AuthPage({ mode }: AuthPageProps) {
                 <div className="relative">
                   <LockKeyhole className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                   <Input className="pl-11 pr-12" type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...(isLogin ? loginForm.register('password') : registerForm.register('password'))} />
-                  <button type="button" aria-label={t(showPassword ? 'Hide password' : 'Show password')} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword((visible) => !visible)}>
+                  <button type="button" aria-label={t(showPassword ? 'Hide password' : 'Show password')} className="absolute right-3 top-3 cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => setShowPassword((visible) => !visible)}>
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
@@ -124,7 +124,7 @@ export function AuthPage({ mode }: AuthPageProps) {
                   <div className="relative">
                     <LockKeyhole className="absolute left-4 top-3.5 text-muted-foreground" size={18} />
                     <Input className="pl-11 pr-12" type={showConfirmPassword ? 'text' : 'password'} placeholder="••••••••" {...registerForm.register('confirmPassword')} />
-                    <button type="button" aria-label={t(showConfirmPassword ? 'Hide password' : 'Show password')} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPassword((visible) => !visible)}>
+                    <button type="button" aria-label={t(showConfirmPassword ? 'Hide password' : 'Show password')} className="absolute right-3 top-3 cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPassword((visible) => !visible)}>
                       {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>

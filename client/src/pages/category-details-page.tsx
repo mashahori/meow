@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   CalendarDays,
   CircleDollarSign,
+  Ellipsis,
   Pencil,
   Plus,
   ReceiptText,
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Menu } from '@base-ui/react/menu';
 import { ExpenseFormDialog } from '../components/expense-form-dialog';
 import { Button } from '../components/ui/button';
 import {
@@ -219,31 +221,41 @@ export function CategoryDetailsPage() {
                   <p className="font-display text-lg font-semibold text-foreground">
                     {formatMoney(expense.amount, budget.currency, locale)}
                   </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => {
-                      deleteMutation.reset();
-                      setEditingExpense(expense);
-                      setExpenseFormOpen(true);
-                    }}
-                    aria-label={`${t('Edit expense')} ${expense.note || formatDate(expense.spentAt, locale)}`}
-                  >
-                    <Pencil />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon-sm"
-                    onClick={() => {
-                      deleteMutation.reset();
-                      setDeletingExpense(expense);
-                    }}
-                    aria-label={`${t('Delete expense')} ${expense.note || formatDate(expense.spentAt, locale)}`}
-                  >
-                    <Trash2 />
-                  </Button>
+                  <Menu.Root>
+                    <Menu.Trigger
+                      aria-label={`${t('Actions for')} ${expense.note || formatDate(expense.spentAt, locale)}`}
+                      render={<Button variant="ghost" size="icon-sm" />}
+                    >
+                      <Ellipsis aria-hidden="true" />
+                    </Menu.Trigger>
+                    <Menu.Portal>
+                      <Menu.Positioner sideOffset={6} align="end" className="z-50">
+                        <Menu.Popup className="min-w-40 rounded-lg border border-border bg-white p-1 shadow-lg outline-none">
+                          <Menu.Item
+                            onClick={() => {
+                              deleteMutation.reset();
+                              setEditingExpense(expense);
+                              setExpenseFormOpen(true);
+                            }}
+                            className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                          >
+                            <Pencil className="size-4" aria-hidden="true" />
+                            {t('Edit')}
+                          </Menu.Item>
+                          <Menu.Item
+                            onClick={() => {
+                              deleteMutation.reset();
+                              setDeletingExpense(expense);
+                            }}
+                            className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none data-highlighted:bg-destructive/10"
+                          >
+                            <Trash2 className="size-4" aria-hidden="true" />
+                            {t('Delete')}
+                          </Menu.Item>
+                        </Menu.Popup>
+                      </Menu.Positioner>
+                    </Menu.Portal>
+                  </Menu.Root>
                 </div>
               </article>
             ))}

@@ -4,13 +4,14 @@ import {
   CalendarDays,
   CircleCheck,
   CircleDollarSign,
+  Copy,
   Ellipsis,
   Pencil,
   Plus,
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Menu } from '@base-ui/react/menu';
 import { CategoryFormDialog } from '../components/category-form-dialog';
 import { BudgetFormDialog } from '../components/create-budget-dialog';
@@ -27,6 +28,7 @@ import type { BudgetCategory } from '../lib/budget-api';
 import { formatNumberWithSpaceGrouping } from '../lib/number-format';
 import { useBudgetArchiveMutation } from '../hooks/use-budget-archive';
 import { useBudgetActiveMutation } from '../hooks/use-budget-active';
+import { useBudgetCloneMutation } from '../hooks/use-budget-clone';
 import { useBudgetDetailsQuery, useDeleteBudgetMutation } from '../hooks/use-budgets';
 import { useDeleteCategoryMutation } from '../hooks/use-budget-categories';
 import { useTranslation } from '../contexts/language-context';
@@ -50,6 +52,7 @@ function formatAmount(amount: string | number, currency: string, locale: string)
 export function BudgetDetailsPage() {
   const { t, locale } = useTranslation();
   const { budgetId } = useParams();
+  const navigate = useNavigate();
   const [categoryFormOpen, setCategoryFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<BudgetCategory>();
   const [deletingCategory, setDeletingCategory] = useState<BudgetCategory>();
@@ -67,6 +70,7 @@ export function BudgetDetailsPage() {
     budgetQuery.data?.status === 'archived',
   );
   const activeMutation = useBudgetActiveMutation(budgetId ?? '', budgetQuery.data?.isActive ?? false);
+  const cloneMutation = useBudgetCloneMutation(budgetId ?? '');
 
   if (budgetQuery.isPending && budgetId) {
     return (
@@ -165,6 +169,18 @@ export function BudgetDetailsPage() {
                         >
                           <Pencil className="size-4" aria-hidden="true" />
                           {t('Edit')}
+                        </Menu.Item>
+                        <Menu.Item
+                          onClick={() => {
+                            cloneMutation.reset();
+                            cloneMutation.mutate(undefined, {
+                              onSuccess: (clonedBudget) => navigate(`/budgets/${clonedBudget.id}`),
+                            });
+                          }}
+                          className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                        >
+                          <Copy className="size-4" aria-hidden="true" />
+                          {t('Clone')}
                         </Menu.Item>
                         {budget.status === 'active' ? (
                           <Menu.Item
@@ -265,6 +281,14 @@ export function BudgetDetailsPage() {
           {archiveMutation.error instanceof Error
             ? t(archiveMutation.error.message)
             : t('Unable to update budget archive.')}
+        </p>
+      ) : null}
+
+      {cloneMutation.isError ? (
+        <p role="alert" className="mt-4 text-sm font-medium text-destructive">
+          {cloneMutation.error instanceof Error
+            ? t(cloneMutation.error.message)
+            : t('Unable to clone budget.')}
         </p>
       ) : null}
 

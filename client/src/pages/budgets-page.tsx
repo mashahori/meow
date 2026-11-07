@@ -1,4 +1,4 @@
-import { Archive, CalendarDays, CircleCheck, Ellipsis, Pencil, Trash2 } from 'lucide-react';
+import { Archive, CalendarDays, CircleCheck, Copy, Ellipsis, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu } from '@base-ui/react/menu';
@@ -16,6 +16,7 @@ import type { Budget } from '../lib/budget-api';
 import { useBudgetsQuery, useDeleteBudgetMutation } from '../hooks/use-budgets';
 import { useBudgetArchiveMutation } from '../hooks/use-budget-archive';
 import { useBudgetActiveMutation } from '../hooks/use-budget-active';
+import { useBudgetCloneMutation } from '../hooks/use-budget-clone';
 import { useTranslation } from '../contexts/language-context';
 
 function formatDate(date: string, locale: string) {
@@ -36,6 +37,7 @@ export function BudgetCard({ budget }: { budget: Budget }) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const archiveMutation = useBudgetArchiveMutation(budget.id, budget.status === 'archived');
   const activeMutation = useBudgetActiveMutation(budget.id, budget.isActive);
+  const cloneMutation = useBudgetCloneMutation(budget.id);
   const deleteMutation = useDeleteBudgetMutation({
     onSuccess: () => setDeleteDialogOpen(false),
   });
@@ -58,6 +60,16 @@ export function BudgetCard({ budget }: { budget: Budget }) {
               >
                 <Pencil className="size-4" aria-hidden="true" />
                 {t('Edit')}
+              </Menu.Item>
+              <Menu.Item
+                onClick={() => {
+                  cloneMutation.reset();
+                  cloneMutation.mutate();
+                }}
+                className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+              >
+                <Copy className="size-4" aria-hidden="true" />
+                {t('Clone')}
               </Menu.Item>
               {budget.status === 'active' ? (
                 <Menu.Item
@@ -105,6 +117,12 @@ export function BudgetCard({ budget }: { budget: Budget }) {
       {archiveMutation.isError ? (
         <p role="alert" className="mb-3 pr-8 text-xs font-medium text-destructive">
           {getErrorMessage(archiveMutation.error, t, 'Unable to update budget archive.')}
+        </p>
+      ) : null}
+
+      {cloneMutation.isError ? (
+        <p role="alert" className="mb-3 pr-8 text-xs font-medium text-destructive">
+          {getErrorMessage(cloneMutation.error, t, 'Unable to clone budget.')}
         </p>
       ) : null}
 

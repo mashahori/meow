@@ -5,6 +5,7 @@ import {
 } from "../errors/app-error";
 import {
   archiveBudget as archiveBudgetRecord,
+  cloneBudget as cloneBudgetRecord,
   unarchiveBudget as unarchiveBudgetRecord,
   BudgetRow,
   CategorySummaryRow,
@@ -88,6 +89,17 @@ export async function archiveBudget(
     throw new NotFoundError("Budget not found");
   }
   return requireBudget(budgetId, userId);
+}
+
+export async function cloneBudget(
+  budgetId: string,
+  userId: string,
+): Promise<BudgetRow> {
+  const clonedId = await cloneBudgetRecord(budgetId, userId);
+  if (!clonedId) {
+    throw new NotFoundError("Budget not found");
+  }
+  return requireBudget(clonedId, userId);
 }
 
 export async function unarchiveBudget(

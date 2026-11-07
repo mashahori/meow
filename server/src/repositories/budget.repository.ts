@@ -198,6 +198,39 @@ export async function unarchiveBudget(budgetId: string, userId: string): Promise
   return (result.rowCount ?? 0) > 0;
 }
 
+// Copies the budget settings and its categories (planned amounts only, no expenses) into a new budget.
+// Returns the new budget id, or null when the source budget is not found for this user.
+export async function cloneBudget(budgetId: string, userId: string): Promise<string | null> {
+  const client: PoolClient = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const inserted = await client.query<{ id: string }>(
+      `INSERT INTO budgets (user_id, name, start_date, end_date, initial_amount, currency)
+       SELECT user_id, LEFT(name || ' (копия)', 100), start_date, end_date, initial_amount, currency
+       FROM budgets
+       WHERE id = $1 AND user_id = $2
+       RETURNING id`,
+      [budgetId, userId],
+    );
+    const newBudgetId = inserted.rows[0]?.id ?? null;
+    if (newBudgetId) {
+      await client.query(
+        `INSERT INTO categories (budget_id, name, planned_amount)
+         SELECT $1::uuid, name, planned_amount FROM categories WHERE budget_id = $2`,
+        [newBudgetId, budgetId],
+      );
+    }
+    await client.query("COMMIT");
+    return newBudgetId;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function setActiveBudget(userId: string, budgetId: string): Promise<void> {
   await pool.query(
     `INSERT INTO active_budgets (user_id, budget_id) VALUES ($1, $2)

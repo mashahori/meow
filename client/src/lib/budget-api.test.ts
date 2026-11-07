@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   archiveBudget,
+  cloneBudget,
   createBudget,
   createCategory,
   deleteBudget,
@@ -120,6 +121,17 @@ describe('budget API', () => {
 
     await expect(unarchiveBudget(budgetId)).resolves.toEqual(restored)
     expect(fetchMock).toHaveBeenCalledWith(`/api/budgets/${budgetId}/unarchive`, {
+      credentials: 'include',
+      method: 'POST',
+    })
+  })
+
+  it('clones a budget', async () => {
+    const cloned = { ...budget, id: '0b7f3c52-3d6e-4f0a-9d1e-8a2b6c4e7f10', name: 'Household (копия)' }
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(cloned), { status: 201 }))
+
+    await expect(cloneBudget(budgetId)).resolves.toEqual(cloned)
+    expect(fetchMock).toHaveBeenCalledWith(`/api/budgets/${budgetId}/clone`, {
       credentials: 'include',
       method: 'POST',
     })

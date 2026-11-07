@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import {
   activateBudget,
   archiveBudget,
+  cloneBudget,
   createBudget,
   deactivateBudget,
   editBudget,
@@ -67,6 +68,14 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
 export async function archive(req: Request, res: Response, next: NextFunction) {
   try {
     res.status(200).json(await archiveBudget(budgetId(req), userId(req)));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function clone(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.status(201).json(await cloneBudget(budgetId(req), userId(req)));
   } catch (error) {
     next(error);
   }

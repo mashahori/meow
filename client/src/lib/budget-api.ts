@@ -115,6 +115,15 @@ export function unarchiveBudget(budgetId: string): Promise<Budget> {
   );
 }
 
+export function cloneBudget(budgetId: string): Promise<Budget> {
+  return requestJson(
+    `/api/budgets/${budgetId}/clone`,
+    budgetSchema,
+    'Unable to clone budget',
+    { method: 'POST' },
+  );
+}
+
 export function activateBudget(budgetId: string): Promise<Budget> {
   return requestJson(
     `/api/budgets/${budgetId}/activate`,

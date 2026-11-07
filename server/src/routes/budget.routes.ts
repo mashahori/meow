@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   activate,
   archive,
+  clone,
   create,
   deactivate,
   getActive,
@@ -38,6 +39,7 @@ router.post("/:budgetId/expenses", requireBudgetOwner, createExpense);
 router.post("/:budgetId/activate", requireBudgetOwner, activate);
 router.post("/:budgetId/deactivate", requireBudgetOwner, deactivate);
 router.post("/:budgetId/archive", requireBudgetOwner, archive);
+router.post("/:budgetId/clone", requireBudgetOwner, clone);
 router.post("/:budgetId/unarchive", requireBudgetOwner, unarchive);
 router.get("/:budgetId", requireBudgetOwner, getOne);
 router.patch("/:budgetId", requireBudgetOwner, update);

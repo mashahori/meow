@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import {
   archiveBudget,
+  cloneBudget,
   type BudgetRow,
   clearActiveBudget,
   deleteBudget,
@@ -82,6 +83,7 @@ describe("budget routes", () => {
       ["POST", `/api/budgets/${BUDGET_ID}/deactivate`],
       ["POST", `/api/budgets/${BUDGET_ID}/archive`],
       ["POST", `/api/budgets/${BUDGET_ID}/unarchive`],
+      ["POST", `/api/budgets/${BUDGET_ID}/clone`],
     ])("%s %s returns 401 without a session", async (method, path) => {
       const response = await newClient().request(method, path, method === "GET" ? undefined : {});
 
@@ -326,6 +328,31 @@ describe("budget routes", () => {
       jest.mocked(unarchiveBudget).mockResolvedValue(false);
 
       const response = await client.post(`/api/budgets/${BUDGET_ID}/unarchive`);
+
+      expect(response.status).toBe(404);
+    });
+  });
+
+  describe("POST /api/budgets/:budgetId/clone", () => {
+    const CLONED_ID = "7c9e6679-7425-40de-944b-e07fc1f90ae7";
+
+    it("creates a copy of the budget and returns it with 201", async () => {
+      const cloned = budgetRow({ id: CLONED_ID, name: "June (копия)" });
+      jest.mocked(cloneBudget).mockResolvedValue(CLONED_ID);
+      jest.mocked(findBudget).mockResolvedValue(cloned);
+
+      const response = await client.post(`/api/budgets/${BUDGET_ID}/clone`);
+
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual(cloned);
+      expect(cloneBudget).toHaveBeenCalledWith(BUDGET_ID, TEST_USER_ID);
+      expect(findBudget).toHaveBeenCalledWith(CLONED_ID, TEST_USER_ID);
+    });
+
+    it("returns 404 when the source budget is not found", async () => {
+      jest.mocked(cloneBudget).mockResolvedValue(null);
+
+      const response = await client.post(`/api/budgets/${BUDGET_ID}/clone`);
 
       expect(response.status).toBe(404);
     });
