@@ -1,6 +1,7 @@
 import {
   ConflictError,
   NotFoundError,
+  ValidationError,
 } from "../errors/app-error";
 import {
   CategoryRow,
@@ -28,10 +29,7 @@ export async function createCategory(
   try {
     id = await insertCategory(budgetId, payload);
   } catch (error) {
-    if (isCategoryNameConflict(error)) {
-      throw new ConflictError("A category with this name already exists");
-    }
-    throw error;
+    throw toCategoryWriteError(error);
   }
 
   const category = await findCategoryInBudget(id, budgetId);
@@ -46,16 +44,14 @@ export async function editCategory(
   userId: string,
   payload: UpdateCategoryPayload,
 ): Promise<CategoryRow> {
+  let updated: boolean;
   try {
-    const updated = await updateOwnedCategory(categoryId, userId, payload);
-    if (!updated) {
-      throw new NotFoundError("Category not found");
-    }
+    updated = await updateOwnedCategory(categoryId, userId, payload);
   } catch (error) {
-    if (isCategoryNameConflict(error)) {
-      throw new ConflictError("A category with this name already exists");
-    }
-    throw error;
+    throw toCategoryWriteError(error);
+  }
+  if (!updated) {
+    throw new NotFoundError("Category not found");
   }
 
   const category = await findOwnedCategory(categoryId, userId);
@@ -69,24 +65,35 @@ export async function removeCategory(
   categoryId: string,
   userId: string,
 ): Promise<void> {
-  const result = await deleteOwnedCategory(categoryId, userId);
-  if (result === "not_found") {
+  const deleted = await deleteOwnedCategory(categoryId, userId);
+  if (!deleted) {
     throw new NotFoundError("Category not found");
-  }
-  if (result === "has_expenses") {
-    throw new ConflictError(
-      "Category has expenses and cannot be deleted",
-    );
   }
 }
 
-function isCategoryNameConflict(error: unknown): boolean {
+function toCategoryWriteError(error: unknown): unknown {
+  if (isConstraintViolation(error, "23505", "categories_budget_id_name_key")) {
+    return new ConflictError("A category with this name already exists");
+  }
+  if (isConstraintViolation(error, "23503", "categories_group_slug_fkey")) {
+    return new ValidationError([
+      { field: "groupSlug", message: "Unknown category group" },
+    ]);
+  }
+  return error;
+}
+
+function isConstraintViolation(
+  error: unknown,
+  code: string,
+  constraint: string,
+): boolean {
   return (
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
     "constraint" in error &&
-    error.code === "23505" &&
-    error.constraint === "categories_budget_id_name_key"
+    error.code === code &&
+    error.constraint === constraint
   );
 }

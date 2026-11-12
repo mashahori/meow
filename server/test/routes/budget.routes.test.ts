@@ -202,7 +202,9 @@ describe("budget routes", () => {
 
   describe("GET /api/budgets/:budgetId", () => {
     it("returns the budget with its category summaries", async () => {
-      const categories = [{ id: "c1", name: "Food", plannedAmount: "5000", spentAmount: "1200" }];
+      const categories = [
+        { id: "c1", name: "Food", groupSlug: "food", plannedAmount: "5000", spentAmount: "1200" },
+      ];
       jest.mocked(findBudget).mockResolvedValue(budgetRow());
       jest.mocked(listBudgetCategories).mockResolvedValue(categories);
 

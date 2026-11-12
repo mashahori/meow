@@ -18,6 +18,7 @@ export type BudgetRow = {
 export type CategorySummaryRow = {
   id: string;
   name: string;
+  groupSlug: string | null;
   plannedAmount: string;
   spentAmount: string;
 };
@@ -87,6 +88,7 @@ export async function listBudgetCategories(budgetId: string): Promise<CategorySu
     `SELECT
        c.id,
        c.name,
+       c.group_slug AS "groupSlug",
        c.planned_amount::text AS "plannedAmount",
        COALESCE(SUM(e.amount), 0)::numeric(12,0)::text AS "spentAmount"
      FROM categories c
@@ -204,7 +206,7 @@ export async function unarchiveBudget(budgetId: string, userId: string): Promise
   return (result.rowCount ?? 0) > 0;
 }
 
-// Copies the budget settings and its categories (planned amounts only, no expenses) into a new budget.
+// Copies the budget settings and its categories (planned amounts and groups, no expenses) into a new budget.
 // Returns the new budget id, or null when the source budget is not found for this user.
 export async function cloneBudget(budgetId: string, userId: string): Promise<string | null> {
   const client: PoolClient = await pool.connect();
@@ -222,8 +224,8 @@ export async function cloneBudget(budgetId: string, userId: string): Promise<str
     const newBudgetId = inserted.rows[0]?.id ?? null;
     if (newBudgetId) {
       await client.query(
-        `INSERT INTO categories (budget_id, name, planned_amount)
-         SELECT $1::uuid, name, planned_amount FROM categories WHERE budget_id = $2`,
+        `INSERT INTO categories (budget_id, name, planned_amount, group_slug)
+         SELECT $1::uuid, name, planned_amount, group_slug FROM categories WHERE budget_id = $2`,
         [newBudgetId, budgetId],
       );
     }

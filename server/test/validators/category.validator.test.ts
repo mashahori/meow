@@ -22,8 +22,24 @@ describe("category validators", () => {
     { name: "Groceries", plannedAmount: 100 },
     { name: "Groceries", plannedAmount: "10000000000" },
     { name: "Groceries", plannedAmount: "0", extra: true },
+    { name: "Groceries", plannedAmount: "0", groupSlug: "Food" },
+    { name: "Groceries", plannedAmount: "0", groupSlug: "" },
+    { name: "Groceries", plannedAmount: "0", groupSlug: 1 },
   ])("rejects invalid create payload %#", (body) => {
     expect(() => validateCreateCategoryPayload(body)).toThrow();
+  });
+
+  it("accepts a group slug or null on create and as the only updated field", () => {
+    expect(
+      validateCreateCategoryPayload({
+        name: "Groceries",
+        plannedAmount: "0",
+        groupSlug: "eating-out",
+      }),
+    ).toEqual({ name: "Groceries", plannedAmount: "0", groupSlug: "eating-out" });
+    expect(validateUpdateCategoryPayload({ groupSlug: null })).toEqual({
+      groupSlug: null,
+    });
   });
 
   it("requires at least one valid field for updates", () => {

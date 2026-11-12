@@ -10,10 +10,18 @@ const plannedAmountSchema = z
   .string()
   .regex(/^(?:0|[1-9]\d{0,9})$/, "Planned amount must be a non-negative whole number");
 
+// Only the format is checked here; whether the group exists is enforced by the database.
+const groupSlugSchema = z
+  .string()
+  .max(50, "Group slug must be at most 50 characters")
+  .regex(/^[a-z]+(?:-[a-z]+)*$/, "Invalid group slug")
+  .nullable();
+
 const createSchema = z
   .object({
     name: nameSchema,
     plannedAmount: plannedAmountSchema,
+    groupSlug: groupSlugSchema.optional(),
   })
   .strict();
 
@@ -21,6 +29,7 @@ const updateSchema = z
   .object({
     name: nameSchema.optional(),
     plannedAmount: plannedAmountSchema.optional(),
+    groupSlug: groupSlugSchema.optional(),
   })
   .strict()
   .refine((data) => Object.keys(data).length > 0, {

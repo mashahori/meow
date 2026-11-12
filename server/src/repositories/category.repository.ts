@@ -1,3 +1,4 @@
+import { PoolClient } from "pg";
 import { pool } from "../db/pool";
 import {
   CreateCategoryPayload,
@@ -8,6 +9,7 @@ export type CategoryRow = {
   id: string;
   budgetId: string;
   name: string;
+  groupSlug: string | null;
   plannedAmount: string;
   spentAmount: string;
   remainingAmount: string;
@@ -18,6 +20,7 @@ const CATEGORY_SELECT = `
     c.id,
     c.budget_id AS "budgetId",
     c.name,
+    c.group_slug AS "groupSlug",
     c.planned_amount::text AS "plannedAmount",
     COALESCE(SUM(e.amount), 0)::numeric(12,0)::text AS "spentAmount",
     (c.planned_amount - COALESCE(SUM(e.amount), 0))::numeric(12,0)::text AS "remainingAmount"
@@ -68,14 +71,15 @@ export async function insertCategory(
   data: CreateCategoryPayload,
 ): Promise<string> {
   const result = await pool.query<{ id: string }>(
-    `INSERT INTO categories (budget_id, name, planned_amount)
-     VALUES ($1, $2, $3)
+    `INSERT INTO categories (budget_id, name, planned_amount, group_slug)
+     VALUES ($1, $2, $3, $4)
      RETURNING id`,
-    [budgetId, data.name, data.plannedAmount],
+    [budgetId, data.name, data.plannedAmount, data.groupSlug ?? null],
   );
   return result.rows[0].id;
 }
 
+// The group has its own "was it sent" flag because null is a real value there: it removes the group.
 export async function updateOwnedCategory(
   categoryId: string,
   userId: string,
@@ -85,61 +89,54 @@ export async function updateOwnedCategory(
     `UPDATE categories c SET
        name = COALESCE($3, c.name),
        planned_amount = COALESCE($4::numeric, c.planned_amount),
+       group_slug = CASE WHEN $5::boolean THEN $6::varchar ELSE c.group_slug END,
        updated_at = now()
      FROM budgets b
      WHERE c.id = $1 AND c.budget_id = b.id AND b.user_id = $2`,
-    [categoryId, userId, data.name ?? null, data.plannedAmount ?? null],
+    [
+      categoryId,
+      userId,
+      data.name ?? null,
+      data.plannedAmount ?? null,
+      data.groupSlug !== undefined,
+      data.groupSlug ?? null,
+    ],
   );
   return (result.rowCount ?? 0) > 0;
 }
 
+// Expenses are removed first because expenses.category_id references categories with ON DELETE RESTRICT.
+// Both deletes run in one transaction, so a category is never removed without its expenses.
 export async function deleteOwnedCategory(
   categoryId: string,
   userId: string,
-): Promise<"deleted" | "not_found" | "has_expenses"> {
+): Promise<boolean> {
+  const client: PoolClient = await pool.connect();
+
   try {
-    const result = await pool.query(
-      `DELETE FROM categories c
-       USING budgets b
-       WHERE c.id = $1 AND c.budget_id = b.id AND b.user_id = $2
-         AND NOT EXISTS (
-           SELECT 1 FROM expenses e WHERE e.category_id = c.id
-         )
-       RETURNING c.id`,
+    await client.query("BEGIN");
+    await client.query(
+      `DELETE FROM expenses e
+       WHERE e.category_id = $1
+         AND EXISTS (
+           SELECT 1 FROM categories c
+           JOIN budgets b ON b.id = c.budget_id
+           WHERE c.id = $1 AND b.user_id = $2
+         )`,
       [categoryId, userId],
     );
-    if ((result.rowCount ?? 0) > 0) {
-      return "deleted";
-    }
+    const result = await client.query(
+      `DELETE FROM categories c
+       USING budgets b
+       WHERE c.id = $1 AND c.budget_id = b.id AND b.user_id = $2`,
+      [categoryId, userId],
+    );
+    await client.query("COMMIT");
+    return (result.rowCount ?? 0) > 0;
   } catch (error) {
-    if (isExpenseForeignKeyViolation(error)) {
-      return "has_expenses";
-    }
+    await client.query("ROLLBACK");
     throw error;
+  } finally {
+    client.release();
   }
-
-  const result = await pool.query<{ hasExpenses: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM expenses e WHERE e.category_id = c.id
-     ) AS "hasExpenses"
-     FROM categories c
-     JOIN budgets b ON b.id = c.budget_id
-     WHERE c.id = $1 AND b.user_id = $2`,
-    [categoryId, userId],
-  );
-  if (!result.rows[0]) {
-    return "not_found";
-  }
-  return result.rows[0].hasExpenses ? "has_expenses" : "not_found";
-}
-
-function isExpenseForeignKeyViolation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    "constraint" in error &&
-    error.code === "23503" &&
-    error.constraint === "expenses_category_id_fkey"
-  );
 }
