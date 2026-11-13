@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { isBudgetOwnedByUser } from "../../src/repositories/budget.repository";
+import { listCategoryGroups } from "../../src/repositories/category-group.repository";
 import {
   type CategoryRow,
   deleteOwnedCategory,
@@ -26,6 +27,7 @@ jest.mock("../../src/config/session", () => {
 
 jest.mock("../../src/repositories/budget.repository");
 jest.mock("../../src/repositories/category.repository");
+jest.mock("../../src/repositories/category-group.repository");
 jest.mock("../../src/repositories/expense.repository");
 jest.mock("../../src/repositories/user.repository");
 
@@ -38,6 +40,7 @@ function categoryRow(overrides: Partial<CategoryRow> = {}): CategoryRow {
     id: CATEGORY_ID,
     budgetId: BUDGET_ID,
     name: "Food",
+    groupSlug: null,
     plannedAmount: "5000",
     spentAmount: "1200",
     remainingAmount: "3800",
@@ -74,11 +77,13 @@ describe("category routes", () => {
       ["PATCH", `/api/categories/${CATEGORY_ID}`],
       ["DELETE", `/api/categories/${CATEGORY_ID}`],
       ["GET", `/api/categories/${CATEGORY_ID}/expenses`],
+      ["GET", "/api/category-groups"],
     ])("%s %s returns 401 without a session", async (method, path) => {
       const response = await newClient().request(method, path, method === "GET" || method === "DELETE" ? undefined : {});
 
       expect(response.status).toBe(401);
       expect(listCategories).not.toHaveBeenCalled();
+      expect(listCategoryGroups).not.toHaveBeenCalled();
       expect(updateOwnedCategory).not.toHaveBeenCalled();
       expect(deleteOwnedCategory).not.toHaveBeenCalled();
     });
@@ -105,7 +110,59 @@ describe("category routes", () => {
     });
   });
 
+  describe("GET /api/category-groups", () => {
+    it("lists the system category groups", async () => {
+      const groups = [
+        { slug: "food", sortOrder: 10 },
+        { slug: "eating-out", sortOrder: 20 },
+      ];
+      jest.mocked(listCategoryGroups).mockResolvedValue(groups);
+
+      const response = await client.get("/api/category-groups");
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ items: groups });
+    });
+  });
+
   describe("POST /api/budgets/:budgetId/categories", () => {
+    it("creates a category in a group", async () => {
+      jest.mocked(insertCategory).mockResolvedValue(CATEGORY_ID);
+      jest.mocked(findCategoryInBudget).mockResolvedValue(categoryRow({ groupSlug: "food" }));
+
+      const response = await client.post(`/api/budgets/${BUDGET_ID}/categories`, {
+        name: "Food",
+        plannedAmount: "5000",
+        groupSlug: "food",
+      });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual(categoryRow({ groupSlug: "food" }));
+      expect(insertCategory).toHaveBeenCalledWith(BUDGET_ID, {
+        name: "Food",
+        plannedAmount: "5000",
+        groupSlug: "food",
+      });
+    });
+
+    it("returns 400 when the group does not exist", async () => {
+      jest.mocked(insertCategory).mockRejectedValue({
+        code: "23503",
+        constraint: "categories_group_slug_fkey",
+      });
+
+      const response = await client.post(`/api/budgets/${BUDGET_ID}/categories`, {
+        name: "Food",
+        plannedAmount: "5000",
+        groupSlug: "unknown",
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toMatchObject({
+        error: { code: "VALIDATION_ERROR", details: [{ field: "groupSlug" }] },
+      });
+    });
+
     it("creates a category and returns it", async () => {
       jest.mocked(insertCategory).mockResolvedValue(CATEGORY_ID);
       jest.mocked(findCategoryInBudget).mockResolvedValue(categoryRow());
@@ -182,6 +239,16 @@ describe("category routes", () => {
       expect(updateOwnedCategory).toHaveBeenCalledWith(CATEGORY_ID, TEST_USER_ID, { name: "Groceries" });
     });
 
+    it("removes the group when groupSlug is null", async () => {
+      jest.mocked(updateOwnedCategory).mockResolvedValue(true);
+      jest.mocked(findOwnedCategory).mockResolvedValue(categoryRow());
+
+      const response = await client.patch(`/api/categories/${CATEGORY_ID}`, { groupSlug: null });
+
+      expect(response.status).toBe(200);
+      expect(updateOwnedCategory).toHaveBeenCalledWith(CATEGORY_ID, TEST_USER_ID, { groupSlug: null });
+    });
+
     it("returns 404 when the category is not owned by the user", async () => {
       jest.mocked(updateOwnedCategory).mockResolvedValue(false);
 
@@ -219,7 +286,7 @@ describe("category routes", () => {
 
   describe("DELETE /api/categories/:categoryId", () => {
     it("deletes the category and returns 204", async () => {
-      jest.mocked(deleteOwnedCategory).mockResolvedValue("deleted");
+      jest.mocked(deleteOwnedCategory).mockResolvedValue(true);
 
       const response = await client.delete(`/api/categories/${CATEGORY_ID}`);
 
@@ -228,20 +295,19 @@ describe("category routes", () => {
     });
 
     it("returns 404 when the category does not exist", async () => {
-      jest.mocked(deleteOwnedCategory).mockResolvedValue("not_found");
+      jest.mocked(deleteOwnedCategory).mockResolvedValue(false);
 
       const response = await client.delete(`/api/categories/${CATEGORY_ID}`);
 
       expect(response.status).toBe(404);
     });
 
-    it("returns 409 when the category still has expenses", async () => {
-      jest.mocked(deleteOwnedCategory).mockResolvedValue("has_expenses");
+    it("deletes a category that still has expenses", async () => {
+      jest.mocked(deleteOwnedCategory).mockResolvedValue(true);
 
       const response = await client.delete(`/api/categories/${CATEGORY_ID}`);
 
-      expect(response.status).toBe(409);
-      expect(response.body).toMatchObject({ error: { code: "CONFLICT" } });
+      expect(response.status).toBe(204);
     });
 
     it("returns 400 for an invalid category id", async () => {

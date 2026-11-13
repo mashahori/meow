@@ -21,9 +21,16 @@ CREATE TABLE IF NOT EXISTS budgets (
   CHECK (end_date >= start_date)
 );
 
+CREATE TABLE IF NOT EXISTS category_groups (
+  slug varchar(50) PRIMARY KEY,
+  sort_order smallint NOT NULL UNIQUE
+);
+
 CREATE TABLE IF NOT EXISTS categories (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   budget_id uuid NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
+  group_slug varchar(50)
+    REFERENCES category_groups(slug) ON UPDATE CASCADE ON DELETE SET NULL,
   name varchar(100) NOT NULL,
   planned_amount numeric(12, 0) NOT NULL DEFAULT 0
     CHECK (planned_amount >= 0),
@@ -45,6 +52,7 @@ CREATE TABLE IF NOT EXISTS expenses (
 
 CREATE INDEX IF NOT EXISTS budgets_user_id_idx ON budgets(user_id);
 CREATE INDEX IF NOT EXISTS categories_budget_id_idx ON categories(budget_id);
+CREATE INDEX IF NOT EXISTS categories_group_slug_idx ON categories(group_slug);
 CREATE INDEX IF NOT EXISTS expenses_budget_id_idx ON expenses(budget_id);
 CREATE INDEX IF NOT EXISTS expenses_category_id_idx ON expenses(category_id);
 

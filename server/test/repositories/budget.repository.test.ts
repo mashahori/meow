@@ -3,6 +3,7 @@ import { pool } from "../../src/db/pool";
 import {
   archiveBudget,
   clearActiveBudget,
+  cloneBudget,
   deleteBudget,
   isBudgetOwnedByUser,
   listBudgets,
@@ -53,6 +54,26 @@ describe("deleteBudget", () => {
     await expect(deleteBudget("budget-1", "user-1")).rejects.toThrow("boom");
     expect(clientQuery.mock.calls.map(([sql]) => sql)).toContain("ROLLBACK");
     expect(release).toHaveBeenCalled();
+  });
+});
+
+describe("cloneBudget", () => {
+  const clientQuery = jest.fn<(sql: string, params?: unknown[]) => Promise<unknown>>();
+
+  beforeEach(() => {
+    clientQuery.mockReset();
+    clientQuery.mockResolvedValue({ rows: [{ id: "budget-2" }], rowCount: 1 });
+    connect.mockReset();
+    connect.mockResolvedValue({ query: clientQuery, release: jest.fn() });
+  });
+
+  it("copies the category groups into the cloned budget", async () => {
+    await expect(cloneBudget("budget-1", "user-1")).resolves.toBe("budget-2");
+
+    const [sql, params] = clientQuery.mock.calls[2];
+    expect(sql).toMatch(/INSERT INTO categories \(budget_id, name, planned_amount, group_slug\)/);
+    expect(sql).toMatch(/SELECT \$1::uuid, name, planned_amount, group_slug FROM categories/);
+    expect(params).toEqual(["budget-2", "budget-1"]);
   });
 });
 

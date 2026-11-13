@@ -49,18 +49,31 @@
 сохранённые значения до ближайшего целого; расходы, которые округлились бы до
 нуля, сохраняются как 1, чтобы расход оставался положительным.
 
+## Category group
+
+| Поле       | Тип         | Ограничения      |
+| ---------- | ----------- | ---------------- |
+| slug       | varchar(50) | primary key      |
+| sort_order | smallint    | unique, not null |
+
+Системный справочник, общий для всех пользователей и бюджетов; заполняется миграцией 008.
+Названия групп в БД не хранятся: клиент переводит их по `slug`. `slug` после выпуска не меняется.
+
 ## Category
 
-| Поле           | Тип           | Ограничения      |
-| -------------- | ------------- | ---------------- |
-| id             | UUID          | primary key      |
-| budget_id      | UUID          | FK -> budgets.id |
-| name           | varchar(100)  | not null         |
-| planned_amount | numeric(12,0) | >= 0             |
-| created_at     | timestamp     | not null         |
-| updated_at     | timestamp     | not null         |
+| Поле           | Тип           | Ограничения                              |
+| -------------- | ------------- | ---------------------------------------- |
+| id             | UUID          | primary key                              |
+| budget_id      | UUID          | FK -> budgets.id                         |
+| group_slug     | varchar(50)   | nullable, FK -> category_groups.slug     |
+| name           | varchar(100)  | not null                                 |
+| planned_amount | numeric(12,0) | >= 0                                     |
+| created_at     | timestamp     | not null                                 |
+| updated_at     | timestamp     | not null                                 |
 
 Ограничение: уникальная пара `(budget_id, name)`.
+
+Группа необязательна. При удалении группы из справочника `group_slug` у её категорий становится `NULL`.
 
 ## Expense
 

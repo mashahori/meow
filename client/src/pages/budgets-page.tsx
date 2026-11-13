@@ -13,26 +13,19 @@ import {
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
 import type { Budget } from '../lib/budget-api';
+import { formatDate } from '../lib/date-format';
 import { useBudgetsQuery, useDeleteBudgetMutation } from '../hooks/use-budgets';
 import { useBudgetArchiveMutation } from '../hooks/use-budget-archive';
 import { useBudgetActiveMutation } from '../hooks/use-budget-active';
 import { useBudgetCloneMutation } from '../hooks/use-budget-clone';
 import { useTranslation } from '../contexts/language-context';
 
-function formatDate(date: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(`${date}T00:00:00`));
-}
-
 function getErrorMessage(error: unknown, t: (text: string) => string, fallback: string) {
   return error instanceof Error ? t(error.message) : t(fallback);
 }
 
 export function BudgetCard({ budget }: { budget: Budget }) {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const archiveMutation = useBudgetArchiveMutation(budget.id, budget.status === 'archived');
@@ -157,11 +150,11 @@ export function BudgetCard({ budget }: { budget: Budget }) {
         <dl className="flex justify-between mt-12 gap-4 border-t border-border pt-4 text-sm">
           <div>
             <dt className="text-muted-foreground">{t('Start date')}</dt>
-            <dd className="mt-1 font-medium text-foreground">{formatDate(budget.startDate, locale)}</dd>
+            <dd className="mt-1 font-medium text-foreground">{formatDate(budget.startDate)}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">{t('End date')}</dt>
-            <dd className="mt-1 font-medium text-foreground">{formatDate(budget.endDate, locale)}</dd>
+            <dd className="mt-1 font-medium text-foreground">{formatDate(budget.endDate)}</dd>
           </div>
         </dl>
       </Link>

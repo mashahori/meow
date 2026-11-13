@@ -8,6 +8,7 @@ import {
   deleteCategory,
   getBudgetDetails,
   getBudgets,
+  getCategoryGroups,
   unarchiveBudget,
   activateBudget,
   deactivateBudget,
@@ -35,6 +36,7 @@ const category = {
   id: categoryId,
   budgetId,
   name: 'Food',
+  groupSlug: 'food',
   plannedAmount: '300',
   spentAmount: '50',
   remainingAmount: '250',
@@ -46,7 +48,7 @@ const budgetPayload = {
   initialAmount: 1000,
   currency: 'RUB' as const,
 }
-const categoryPayload = { name: 'Food', plannedAmount: '300' }
+const categoryPayload = { name: 'Food', plannedAmount: '300', groupSlug: null }
 
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock)
@@ -70,6 +72,7 @@ describe('budget API', () => {
         {
           id: category.id,
           name: category.name,
+          groupSlug: category.groupSlug,
           plannedAmount: category.plannedAmount,
           spentAmount: category.spentAmount,
         },
@@ -162,6 +165,17 @@ describe('budget API', () => {
       [`/api/budgets/${budgetId}/categories`, 'POST', JSON.stringify(categoryPayload)],
       [`/api/categories/${categoryId}`, 'PATCH', JSON.stringify(categoryPayload)],
     ])
+  })
+
+  it('loads category groups', async () => {
+    const groups = [
+      { slug: 'food', sortOrder: 10 },
+      { slug: 'eating-out', sortOrder: 20 },
+    ]
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ items: groups })))
+
+    await expect(getCategoryGroups()).resolves.toEqual(groups)
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/category-groups')
   })
 
   it('deletes a category', async () => {

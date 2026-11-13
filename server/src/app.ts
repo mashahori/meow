@@ -8,6 +8,7 @@ import { errorHandler } from "./middleware/error-handler";
 import { requestLogger } from "./middleware/request-logger";
 import authRoutes from "./routes/auth.routes";
 import budgetRoutes from "./routes/budget.routes";
+import categoryGroupRoutes from "./routes/category-group.routes";
 import categoryRoutes from "./routes/category.routes";
 import expenseRoutes from "./routes/expense.routes";
 
@@ -25,6 +26,7 @@ app.use(sessionMiddleware);
 app.use("/api/auth", authRoutes);
 app.use("/api/budgets", budgetRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/category-groups", categoryGroupRoutes);
 app.use("/api/expenses", expenseRoutes);
 
 const clientBuildPath = path.resolve(__dirname, "../../client/dist");

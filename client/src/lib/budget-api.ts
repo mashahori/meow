@@ -18,8 +18,13 @@ const budgetSchema = z.object({
 const budgetCategorySchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
+  groupSlug: z.string().nullable(),
   plannedAmount: z.string(),
   spentAmount: z.string(),
+});
+
+const categoryGroupsResponseSchema = z.object({
+  items: z.array(z.object({ slug: z.string(), sortOrder: z.number() })),
 });
 
 const categorySchema = budgetCategorySchema.extend({
@@ -37,9 +42,11 @@ export type Budget = z.infer<typeof budgetSchema>;
 export type BudgetDetails = z.infer<typeof budgetDetailsSchema>;
 export type BudgetCategory = z.infer<typeof budgetCategorySchema>;
 export type Category = z.infer<typeof categorySchema>;
+export type CategoryGroup = z.infer<typeof categoryGroupsResponseSchema>['items'][number];
 export type CategoryPayload = {
   name: string;
   plannedAmount: string;
+  groupSlug: string | null;
 };
 export type CreateBudgetPayload = {
   name: string;
@@ -140,6 +147,15 @@ export function deactivateBudget(budgetId: string): Promise<Budget> {
     'Unable to deactivate budget',
     { method: 'POST' },
   );
+}
+
+export function getCategoryGroups(signal?: AbortSignal): Promise<CategoryGroup[]> {
+  return requestJson(
+    '/api/category-groups',
+    categoryGroupsResponseSchema,
+    'Unable to load category groups',
+    { signal },
+  ).then(({ items }) => items);
 }
 
 export function createCategory(budgetId: string, payload: CategoryPayload): Promise<Category> {

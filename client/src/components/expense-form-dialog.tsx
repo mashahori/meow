@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import type { BudgetCategory } from '../lib/budget-api';
 import type { Expense } from '../lib/expense-api';
 import { useSaveExpenseMutation } from '../hooks/use-expenses';
 import { Button } from './ui/button';
@@ -15,6 +16,7 @@ const amountPattern = /^(?:0|[1-9]\d{0,9})$/;
 
 function createExpenseFormSchema(t: (text: string) => string) {
   return z.object({
+    categoryId: z.string().min(1),
     amount: z
       .string()
       .regex(amountPattern, t('Enter a whole amount'))
@@ -29,6 +31,7 @@ type ExpenseFormValues = z.infer<ReturnType<typeof createExpenseFormSchema>>;
 type ExpenseFormDialogProps = {
   budgetId: string;
   categoryId: string;
+  categories: BudgetCategory[];
   startDate: string;
   endDate: string;
   currency: string;
@@ -47,8 +50,14 @@ function getDefaultDate(startDate: string, endDate: string) {
   return localToday < startDate || localToday > endDate ? startDate : localToday;
 }
 
-function getExpenseFormValues(startDate: string, endDate: string, expense?: Expense) {
+function getExpenseFormValues(
+  startDate: string,
+  endDate: string,
+  categoryId: string,
+  expense?: Expense,
+) {
   return {
+    categoryId: expense?.categoryId ?? categoryId,
     amount: expense?.amount ?? '',
     spentAt: expense?.spentAt ?? getDefaultDate(startDate, endDate),
     note: expense?.note ?? '',
@@ -58,6 +67,7 @@ function getExpenseFormValues(startDate: string, endDate: string, expense?: Expe
 export function ExpenseFormDialog({
   budgetId,
   categoryId,
+  categories,
   startDate,
   endDate,
   currency,
@@ -69,7 +79,7 @@ export function ExpenseFormDialog({
   const expenseFormSchema = createExpenseFormSchema(t);
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
-    defaultValues: getExpenseFormValues(startDate, endDate, expense),
+    defaultValues: getExpenseFormValues(startDate, endDate, categoryId, expense),
   });
   const { reset: resetForm } = form;
   const mutation = useSaveExpenseMutation(budgetId, categoryId, expense, {
@@ -81,9 +91,9 @@ export function ExpenseFormDialog({
   useEffect(() => {
     if (!open) return;
 
-    resetForm(getExpenseFormValues(startDate, endDate, expense));
+    resetForm(getExpenseFormValues(startDate, endDate, categoryId, expense));
     resetMutation();
-  }, [endDate, expense, open, resetForm, resetMutation, startDate]);
+  }, [categoryId, endDate, expense, open, resetForm, resetMutation, startDate]);
 
   const onSubmit = form.handleSubmit((values) => {
     if (values.spentAt < startDate || values.spentAt > endDate) {
@@ -108,11 +118,30 @@ export function ExpenseFormDialog({
           <DialogTitle>{t(expense ? 'Edit expense' : 'Add an expense')}</DialogTitle>
           <DialogDescription>
             {expense
-              ? t('Update the expense amount, date, or note.')
+              ? t('Update the expense amount, category, date, or note.')
               : t('Record a new expense in this category.')}
           </DialogDescription>
         </DialogHeader>
         <form className="w-full min-w-0 space-y-5" onSubmit={onSubmit} noValidate>
+          {expense ? (
+            <Field
+              label={t('Category')}
+              htmlFor="expense-category"
+              error={form.formState.errors.categoryId?.message}
+            >
+              <select
+                id="expense-category"
+                className="h-12 w-full rounded-xl border border-input bg-transparent px-4 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                {...form.register('categoryId')}
+              >
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : null}
           <Field
             label={`${t('Amount')} (${currency})`}
             htmlFor="expense-amount"

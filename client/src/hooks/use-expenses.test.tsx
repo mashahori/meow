@@ -133,11 +133,38 @@ describe('useSaveExpenseMutation', () => {
     });
 
     expect(updateExpense).toHaveBeenCalledWith(expenseId, {
+      categoryId,
       amount: '200',
       spentAt: '2026-11-02',
       note: null,
     });
     expect(createExpense).not.toHaveBeenCalled();
+  });
+
+  it('moves an expense to another category and refreshes both categories', async () => {
+    const targetCategoryId = '44444444-4444-4444-8444-444444444444';
+    vi.mocked(updateExpense).mockResolvedValueOnce({ ...expense, categoryId: targetCategoryId });
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const { result } = renderHook(() => useSaveExpenseMutation(budgetId, categoryId, expense), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        categoryId: targetCategoryId,
+        amount: '150',
+        spentAt: '2026-11-01',
+        note: 'Lunch',
+      });
+    });
+
+    expect(updateExpense).toHaveBeenCalledWith(
+      expenseId,
+      expect.objectContaining({ categoryId: targetCategoryId }),
+    );
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['category-expenses', categoryId] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['category-expenses', targetCategoryId] });
   });
 
   it('invalidates the category expenses and budget after saving', async () => {

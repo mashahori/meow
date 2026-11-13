@@ -25,6 +25,7 @@ import {
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
 import type { BudgetCategory } from '../lib/budget-api';
+import { formatDate } from '../lib/date-format';
 import { formatNumberWithSpaceGrouping } from '../lib/number-format';
 import { useBudgetArchiveMutation } from '../hooks/use-budget-archive';
 import { useBudgetActiveMutation } from '../hooks/use-budget-active';
@@ -32,14 +33,6 @@ import { useBudgetCloneMutation } from '../hooks/use-budget-clone';
 import { useBudgetDetailsQuery, useDeleteBudgetMutation } from '../hooks/use-budgets';
 import { useDeleteCategoryMutation } from '../hooks/use-budget-categories';
 import { useTranslation } from '../contexts/language-context';
-
-function formatDate(date: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(`${date}T00:00:00`));
-}
 
 function formatAmount(amount: string | number, currency: string, locale: string) {
   return formatNumberWithSpaceGrouping(amount, locale, {
@@ -112,15 +105,16 @@ export function BudgetDetailsPage() {
   const planned = Number(budget.plannedAmount);
   const spendPercent = planned > 0 ? Math.min((spent / planned) * 100, 100) : 0;
   const isOverSpent = spent > planned;
+  const isArchived = budget.status === 'archived';
 
   return (
     <section className="mx-auto max-w-5xl">
       <Link
-        to="/budgets"
+        to={isArchived ? '/archived-budgets' : '/budgets'}
         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
-        {t('All budgets')}
+        {isArchived ? t('Budget archive') : t('All budgets')}
       </Link>
 
       <header className="mt-6 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
@@ -227,7 +221,7 @@ export function BudgetDetailsPage() {
               <div>
                 <p className="text-muted-foreground">{t('Budget period')}</p>
                 <p className="mt-1 font-medium text-foreground">
-                  {formatDate(budget.startDate, locale)} — {formatDate(budget.endDate, locale)}
+                  {formatDate(budget.startDate)} — {formatDate(budget.endDate)}
                 </p>
               </div>
             </div>
@@ -503,7 +497,7 @@ export function BudgetDetailsPage() {
             <DialogTitle>{t('Delete category?')}</DialogTitle>
             <DialogDescription>
               “{deletingCategory?.name}”{' '}
-              {t('will be removed from this budget. Categories with expenses cannot be deleted.')}
+              {t('will be removed from this budget together with all its expenses.')}
             </DialogDescription>
           </DialogHeader>
           {deleteMutation.isError ? (

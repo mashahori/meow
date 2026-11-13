@@ -1,7 +1,8 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createCategory,
   deleteCategory,
+  getCategoryGroups,
   updateCategory,
   type BudgetCategory,
   type CategoryPayload,
@@ -10,6 +11,16 @@ import {
 type MutationOptions = {
   onSuccess?: () => void;
 };
+
+// The list is a system dictionary that only changes with a release, so it is never refetched.
+export function useCategoryGroupsQuery(enabled: boolean) {
+  return useQuery({
+    queryKey: ['category-groups'],
+    queryFn: ({ signal }) => getCategoryGroups(signal),
+    staleTime: Infinity,
+    enabled,
+  });
+}
 
 export function useSaveCategoryMutation(
   budgetId: string,
