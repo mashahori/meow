@@ -14,6 +14,7 @@ type MutationOptions = {
 };
 
 export type SaveExpenseValues = {
+  categoryId?: string;
   amount: string;
   spentAt: string;
   note: string;
@@ -45,6 +46,7 @@ export function useSaveExpenseMutation(
       const note = values.note.trim();
       if (expense) {
         return updateExpense(expense.id, {
+          categoryId: values.categoryId ?? expense.categoryId,
           amount: values.amount,
           spentAt: values.spentAt,
           note: note || null,
@@ -58,9 +60,12 @@ export function useSaveExpenseMutation(
       };
       return createExpense(budgetId, payload);
     },
-    onSuccess: async () => {
+    onSuccess: async (saved) => {
+      const affectedCategoryIds = Array.from(new Set([categoryId, saved.categoryId]));
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['category-expenses', categoryId] }),
+        ...affectedCategoryIds.map((id) =>
+          queryClient.invalidateQueries({ queryKey: ['category-expenses', id] }),
+        ),
         queryClient.invalidateQueries({ queryKey: ['budget', budgetId] }),
       ]);
       options?.onSuccess?.();

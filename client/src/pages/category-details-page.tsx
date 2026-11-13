@@ -9,8 +9,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Menu } from '@base-ui/react/menu';
+import { CategoryFormDialog } from '../components/category-form-dialog';
 import { ExpenseFormDialog } from '../components/expense-form-dialog';
 import { Button } from '../components/ui/button';
 import {
@@ -22,18 +23,12 @@ import {
 } from '../components/ui/dialog';
 import { Spinner } from '../components/ui/spinner';
 import type { Expense } from '../lib/expense-api';
+import { formatDate } from '../lib/date-format';
 import { formatNumberWithSpaceGrouping } from '../lib/number-format';
 import { useBudgetDetailsQuery } from '../hooks/use-budgets';
+import { useDeleteCategoryMutation } from '../hooks/use-budget-categories';
 import { useCategoryExpensesQuery, useDeleteExpenseMutation } from '../hooks/use-expenses';
 import { useTranslation } from '../contexts/language-context';
-
-function formatDate(date: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(`${date}T00:00:00`));
-}
 
 function formatMoney(amount: string | number, currency: string, locale: string) {
   return formatNumberWithSpaceGrouping(amount, locale, {
@@ -46,6 +41,9 @@ function formatMoney(amount: string | number, currency: string, locale: string) 
 export function CategoryDetailsPage() {
   const { t, locale } = useTranslation();
   const { budgetId, categoryId } = useParams();
+  const navigate = useNavigate();
+  const [categoryFormOpen, setCategoryFormOpen] = useState(false);
+  const [deleteCategoryDialogOpen, setDeleteCategoryDialogOpen] = useState(false);
   const [expenseFormOpen, setExpenseFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense>();
   const [deletingExpense, setDeletingExpense] = useState<Expense>();
@@ -54,6 +52,9 @@ export function CategoryDetailsPage() {
   const expensesQuery = useCategoryExpensesQuery(categoryId, Boolean(category));
   const deleteMutation = useDeleteExpenseMutation(budgetId, categoryId, {
     onSuccess: () => setDeletingExpense(undefined),
+  });
+  const deleteCategoryMutation = useDeleteCategoryMutation(budgetId, {
+    onSuccess: () => navigate(`/budgets/${budgetId}`),
   });
 
   if (budgetQuery.isPending && budgetId) {
@@ -109,19 +110,52 @@ export function CategoryDetailsPage() {
       </Link>
 
       <header className="mt-6 rounded-2xl border border-border bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex items-start gap-4">
-          <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted text-primary">
-            <CircleDollarSign size={22} />
-          </span>
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              {t('Category details')}
-            </p>
-            <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-foreground">
-              {category.name}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">{budget.name}</p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted text-primary">
+              <CircleDollarSign size={22} />
+            </span>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {t('Category details')}
+              </p>
+              <h1 className="mt-1 font-display text-3xl font-semibold tracking-[-0.04em] text-foreground">
+                {category.name}
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">{budget.name}</p>
+            </div>
           </div>
+          <Menu.Root>
+            <Menu.Trigger
+              aria-label={`${t('Actions for')} ${category.name}`}
+              render={<Button variant="ghost" size="icon-sm" />}
+            >
+              <Ellipsis aria-hidden="true" />
+            </Menu.Trigger>
+            <Menu.Portal>
+              <Menu.Positioner sideOffset={6} align="end" className="z-50">
+                <Menu.Popup className="min-w-40 rounded-lg border border-border bg-white p-1 shadow-lg outline-none">
+                  <Menu.Item
+                    onClick={() => setCategoryFormOpen(true)}
+                    className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground outline-none data-highlighted:bg-muted"
+                  >
+                    <Pencil className="size-4" aria-hidden="true" />
+                    {t('Edit')}
+                  </Menu.Item>
+                  <Menu.Item
+                    onClick={() => {
+                      deleteCategoryMutation.reset();
+                      setDeleteCategoryDialogOpen(true);
+                    }}
+                    className="flex cursor-default items-center gap-2 rounded-md px-3 py-2 text-sm text-destructive outline-none data-highlighted:bg-destructive/10"
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                    {t('Delete')}
+                  </Menu.Item>
+                </Menu.Popup>
+              </Menu.Positioner>
+            </Menu.Portal>
+          </Menu.Root>
         </div>
         <div className="mt-7 grid grid-cols-1 gap-5 border-t border-border pt-5 sm:grid-cols-3">
           <div>
@@ -201,7 +235,7 @@ export function CategoryDetailsPage() {
             {expensesQuery.data.map((expense) => (
               <article
                 key={expense.id}
-                className="flex flex-wrap items-center justify-between gap-3 p-5"
+                className="flex items-center justify-between gap-3 p-5"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
@@ -212,18 +246,17 @@ export function CategoryDetailsPage() {
                       {expense.note || t('Expense')}
                     </p>
                     <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <CalendarDays className="size-4" />
-                      {formatDate(expense.spentAt, locale)}
+                      {formatDate(expense.spentAt)}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex gap-3">
                   <p className="font-display text-lg font-semibold text-foreground">
                     {formatMoney(expense.amount, budget.currency, locale)}
                   </p>
                   <Menu.Root>
                     <Menu.Trigger
-                      aria-label={`${t('Actions for')} ${expense.note || formatDate(expense.spentAt, locale)}`}
+                      aria-label={`${t('Actions for')} ${expense.note || formatDate(expense.spentAt)}`}
                       render={<Button variant="ghost" size="icon-sm" />}
                     >
                       <Ellipsis aria-hidden="true" />
@@ -272,9 +305,17 @@ export function CategoryDetailsPage() {
           </div>
         )}
       </section>
+      <CategoryFormDialog
+        budgetId={budget.id}
+        currency={budget.currency}
+        category={category}
+        open={categoryFormOpen}
+        onOpenChange={setCategoryFormOpen}
+      />
       <ExpenseFormDialog
         budgetId={budget.id}
         categoryId={category.id}
+        categories={budget.categories}
         startDate={budget.startDate}
         endDate={budget.endDate}
         currency={budget.currency}
@@ -285,6 +326,57 @@ export function CategoryDetailsPage() {
           if (!open) setEditingExpense(undefined);
         }}
       />
+      <Dialog
+        open={deleteCategoryDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteCategoryDialogOpen(open);
+          if (!open) deleteCategoryMutation.reset();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('Delete category?')}</DialogTitle>
+            <DialogDescription>
+              “{category.name}” {t('will be removed from this budget together with all its expenses.')}
+            </DialogDescription>
+          </DialogHeader>
+          {deleteCategoryMutation.isError ? (
+            <p role="alert" className="mb-4 text-sm font-medium text-destructive">
+              {deleteCategoryMutation.error instanceof Error
+                ? t(deleteCategoryMutation.error.message)
+                : t('Unable to delete category.')}
+            </p>
+          ) : null}
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteCategoryDialogOpen(false)}
+              disabled={deleteCategoryMutation.isPending}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => deleteCategoryMutation.mutate(category.id)}
+              disabled={deleteCategoryMutation.isPending}
+            >
+              {deleteCategoryMutation.isPending ? (
+                <>
+                  <Spinner />
+                  {t('Deleting…')}
+                </>
+              ) : (
+                <>
+                  <Trash2 />
+                  {t('Delete category')}
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={Boolean(deletingExpense)}
         onOpenChange={(open) => {

@@ -20,6 +20,7 @@ export type CreateExpensePayload = {
   note?: string;
 };
 export type UpdateExpensePayload = {
+  categoryId?: string;
   amount: string;
   spentAt: string;
   note: string | null;
