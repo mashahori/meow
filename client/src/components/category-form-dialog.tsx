@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import type { BudgetCategory } from '../lib/budget-api';
-import { useSaveCategoryMutation } from '../hooks/use-budget-categories';
+import { getCategoryGroupName } from '../lib/category-groups';
+import { useCategoryGroupsQuery, useSaveCategoryMutation } from '../hooks/use-budget-categories';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Field } from './ui/field';
@@ -18,6 +19,8 @@ function createCategoryFormSchema(t: (text: string) => string) {
     plannedAmount: z
       .string()
       .regex(/^(?:0|[1-9]\d{0,9})$/, t('Enter a whole amount')),
+    // An empty string means the category has no group.
+    groupSlug: z.string(),
   });
 }
 
@@ -45,11 +48,18 @@ export function CategoryFormDialog({
     defaultValues: {
       name: category?.name ?? '',
       plannedAmount: category?.plannedAmount ?? '',
+      groupSlug: category?.groupSlug ?? '',
     },
   });
   const mutation = useSaveCategoryMutation(budgetId, category, {
     onSuccess: () => onOpenChange(false),
   });
+  const groupsQuery = useCategoryGroupsQuery(open);
+  // The category's own group is always offered, so it stays selected while the list is loading or unavailable.
+  const groupSlugs = (groupsQuery.data ?? []).map((group) => group.slug);
+  if (category?.groupSlug && !groupSlugs.includes(category.groupSlug)) {
+    groupSlugs.unshift(category.groupSlug);
+  }
   const { reset: resetForm } = form;
   const { reset: resetMutation } = mutation;
 
@@ -59,11 +69,14 @@ export function CategoryFormDialog({
     resetForm({
       name: category?.name ?? '',
       plannedAmount: category?.plannedAmount ?? '',
+      groupSlug: category?.groupSlug ?? '',
     });
     resetMutation();
   }, [category, open, resetForm, resetMutation]);
 
-  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
+  const onSubmit = form.handleSubmit(({ groupSlug, ...values }) =>
+    mutation.mutate({ ...values, groupSlug: groupSlug || null }),
+  );
 
   return (
     <Dialog
@@ -81,7 +94,7 @@ export function CategoryFormDialog({
           <DialogTitle>{t(category ? 'Edit category' : 'Create a category')}</DialogTitle>
           <DialogDescription>
             {category
-              ? t('Update the category name or planned amount.')
+              ? t('Update the category name, group or planned amount.')
               : t('Add a category and its planned spending amount to this budget.')}
           </DialogDescription>
         </DialogHeader>
@@ -101,6 +114,20 @@ export function CategoryFormDialog({
                 {...form.register('name')}
               />
             </div>
+          </Field>
+          <Field label={t('Group')} htmlFor="category-group">
+            <select
+              id="category-group"
+              className="h-12 w-full rounded-xl border border-input bg-transparent px-4 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              {...form.register('groupSlug')}
+            >
+              <option value="">{t('No group')}</option>
+              {groupSlugs.map((slug) => (
+                <option key={slug} value={slug}>
+                  {t(getCategoryGroupName(slug))}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field
             label={`${t('Planned amount')} (${currency})`}

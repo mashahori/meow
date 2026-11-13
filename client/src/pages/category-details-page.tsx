@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  CalendarDays,
   CircleDollarSign,
   Ellipsis,
   Pencil,
