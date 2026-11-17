@@ -1,4 +1,4 @@
-import { Archive, Layers3, LogOut, WalletCards } from 'lucide-react'
+import { Archive, ChartNoAxesColumn, Layers3, LogOut, WalletCards } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/use-auth'
@@ -20,6 +20,7 @@ import {
 const navigation = [
   // { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Budgets', url: '/budgets', icon: WalletCards },
+  { title: 'Statistics', url: '/statistics', icon: ChartNoAxesColumn },
   { title: 'Budget archive', url: '/archived-budgets', icon: Archive },
 ]
 

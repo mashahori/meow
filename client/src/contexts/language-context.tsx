@@ -220,6 +220,22 @@ const russianTranslations: Record<string, string> = {
   'Ruble': 'Российский рубль',
   'US Dollar': 'Доллар США',
   Euro: 'Евро',
+  Statistics: 'Статистика',
+  'Expenses across all your budgets for the selected month.': 'Расходы по всем вашим бюджетам за выбранный месяц.',
+  'Previous month': 'Предыдущий месяц',
+  'Next month': 'Следующий месяц',
+  'Loading statistics': 'Загрузка статистики',
+  'Loading statistics…': 'Загружаем статистику…',
+  'Unable to load statistics.': 'Не удалось загрузить статистику.',
+  'No expenses for this month': 'За этот месяц расходов нет',
+  'Expenses from all your budgets for the selected month will appear here.': 'Расходы из всех ваших бюджетов за выбранный месяц появятся здесь.',
+  'Spent for the month': 'Потрачено за месяц',
+  'On average per day': 'В среднем в день',
+  'Total expenses': 'Всего трат',
+  'Largest expense': 'Самая крупная трата',
+  'Expenses by groups': 'Расходы по группам',
+  'Top large expenses': 'Топ крупных трат',
+  Other: 'Прочее',
 };
 
 type LanguageContextValue = {

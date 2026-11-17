@@ -48,6 +48,7 @@ export function useDeleteCategoryMutation(budgetId: string | undefined, options?
       if (budgetId) {
         await queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
       }
+      await queryClient.invalidateQueries({ queryKey: ['statistics'] });
       options?.onSuccess?.();
     },
   });

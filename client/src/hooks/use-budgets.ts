@@ -63,6 +63,7 @@ export function useDeleteBudgetMutation(options?: MutationOptions) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['budgets'] }),
         queryClient.invalidateQueries({ queryKey: ['budget', budgetId] }),
+        queryClient.invalidateQueries({ queryKey: ['statistics'] }),
       ]);
       options?.onSuccess?.();
     },
