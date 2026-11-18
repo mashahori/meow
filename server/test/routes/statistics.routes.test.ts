@@ -131,6 +131,69 @@ describe('statistics routes', () => {
     expect(listMonthlyExpenses).toHaveBeenCalledWith(TEST_USER_ID, '2026-11-01');
   });
 
+  it('keeps cent precision for decimal amounts', async () => {
+    jest.mocked(listMonthlyExpenses).mockResolvedValue([
+      {
+        id: EXPENSE_ID,
+        amount: '1234.56',
+        spentAt: '2026-11-05',
+        currency: 'RUB',
+        categoryId: CATEGORY_ID,
+        categoryName: 'Продукты',
+        groupSlug: 'food',
+        note: null,
+      },
+      {
+        id: 'c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f',
+        amount: '0.1',
+        spentAt: '2026-11-05',
+        currency: 'RUB',
+        categoryId: CATEGORY_ID,
+        categoryName: 'Продукты',
+        groupSlug: 'food',
+        note: null,
+      },
+    ]);
+
+    const response = await client.get('/api/statistics?month=2026-11');
+
+    expect(response.status).toBe(200);
+    const [currency] = (response.body as { currencies: Record<string, unknown>[] }).currencies;
+    expect(currency).toMatchObject({
+      summary: { totalAmount: '1234.66', expenseCount: 2, averagePerDay: '41.16' },
+      groups: [{ slug: 'food', amount: '1234.66', sharePercent: 100 }],
+      daily: expect.arrayContaining([{ date: '2026-11-05', amount: '1234.66' }]),
+      topExpenses: [
+        expect.objectContaining({ amount: '1234.56' }),
+        expect.objectContaining({ amount: '0.10' }),
+      ],
+    });
+  });
+
+  it('returns zero shares when all expenses in a currency are zero', async () => {
+    jest.mocked(listMonthlyExpenses).mockResolvedValue([
+      {
+        id: EXPENSE_ID,
+        amount: '0',
+        spentAt: '2026-11-10',
+        currency: 'RUB',
+        categoryId: CATEGORY_ID,
+        categoryName: 'Продукты',
+        groupSlug: 'food',
+        note: null,
+      },
+    ]);
+
+    const response = await client.get('/api/statistics?month=2026-11');
+
+    expect(response.status).toBe(200);
+    const [currency] = (response.body as { currencies: Record<string, unknown>[] }).currencies;
+    expect(currency).toMatchObject({
+      summary: { totalAmount: '0.00', expenseCount: 1, averagePerDay: '0.00' },
+      groups: [{ slug: 'food', amount: '0.00', sharePercent: 0 }],
+    });
+  });
+
   it('rejects invalid months', async () => {
     const response = await client.get('/api/statistics?month=2026-13');
 
