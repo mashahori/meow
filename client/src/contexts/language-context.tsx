@@ -210,7 +210,7 @@ const russianTranslations: Record<string, string> = {
   'Amount is too large': 'Сумма слишком велика',
   'End date must not be before start date': 'Дата окончания не может быть раньше даты начала',
   'Amount must be greater than zero': 'Сумма должна быть больше нуля',
-  'Maximum 500 characters': 'Максимум 500 символов',
+  'Maximum 200 characters': 'Максимум 200 символов',
   'Date must be within the budget period': 'Дата должна входить в период бюджета',
   'Enter a valid email address': 'Введите корректный адрес электронной почты',
   'Password must be at least 8 characters': 'Пароль должен содержать не менее 8 символов',
@@ -236,6 +236,9 @@ const russianTranslations: Record<string, string> = {
   'Expenses by groups': 'Расходы по группам',
   'Top large expenses': 'Топ крупных трат',
   Other: 'Прочее',
+  'Share of expenses': 'Доля в расходах',
+  'Expenses by days': 'Расходы по дням',
+  total: 'всего',
 };
 
 type LanguageContextValue = {

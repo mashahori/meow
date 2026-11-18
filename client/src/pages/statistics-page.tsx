@@ -9,6 +9,18 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { Button } from '../components/ui/button';
 import { Spinner } from '../components/ui/spinner';
 import { useTranslation } from '../contexts/language-context';
@@ -26,6 +38,8 @@ function formatMoney(amount: string | number, currency: string, locale: string) 
     maximumFractionDigits: 0,
   });
 }
+
+const CHART_COLORS = ['#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#14b8a6', '#ec4899', '#94a3b8'];
 
 function StatCard({
   icon: Icon,
@@ -120,6 +134,18 @@ export function StatisticsPage() {
     const { currency } = stats;
     const [largestExpense] = stats.topExpenses;
     const percentFormatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+    const groupChartData = stats.groups.map((group, index) => ({
+      key: group.slug ?? 'other',
+      name: group.slug ? t(getCategoryGroupName(group.slug)) : t('Other'),
+      value: Number(group.amount),
+      amount: group.amount,
+      percent: group.sharePercent,
+      color: CHART_COLORS[index % CHART_COLORS.length],
+    }));
+    const dailyChartData = stats.daily.map((day) => ({
+      date: day.date,
+      amount: Number(day.amount),
+    }));
 
     content = (
       <div className="space-y-5">
@@ -174,22 +200,72 @@ export function StatisticsPage() {
         <div className="grid gap-5 lg:grid-cols-2">
           <section className="rounded-xl border border-border bg-white p-6 shadow-sm">
             <h2 className="font-display text-lg font-semibold text-foreground">
+              {t('Share of expenses')}
+            </h2>
+            <div className="relative mt-4 h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={groupChartData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius="62%"
+                    outerRadius="90%"
+                    paddingAngle={1}
+                    stroke="#ffffff"
+                    isAnimationActive={false}
+                  >
+                    {groupChartData.map((group) => (
+                      <Cell key={group.key} fill={group.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatMoney(Number(value), currency, locale)} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="font-display text-lg font-semibold text-foreground">
+                  {formatMoney(stats.summary.totalAmount, currency, locale)}
+                </span>
+                <span className="text-xs text-primary">{t('total')}</span>
+              </div>
+            </div>
+            <ul className="mt-4 space-y-2">
+              {groupChartData.map((group) => (
+                <li key={group.key} className="flex items-center justify-between gap-4 text-sm">
+                  <span className="flex items-center gap-2 text-foreground">
+                    <span
+                      className="size-2.5 rounded-full"
+                      style={{ backgroundColor: group.color }}
+                      aria-hidden="true"
+                    />
+                    {group.name}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {percentFormatter.format(group.percent)}%
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="rounded-xl border border-border bg-white p-6 shadow-sm">
+            <h2 className="font-display text-lg font-semibold text-foreground">
               {t('Expenses by groups')}
             </h2>
             <ul className="mt-4">
-              {stats.groups.map((group) => (
+              {groupChartData.map((group) => (
                 <li
-                  key={group.slug ?? 'other'}
+                  key={group.key}
                   className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-b-0"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {group.slug ? t(getCategoryGroupName(group.slug)) : t('Other')}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {percentFormatter.format(group.sharePercent)}%
-                    </p>
-                  </div>
+                  <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <span
+                      className="size-2.5 rounded-full"
+                      style={{ backgroundColor: group.color }}
+                      aria-hidden="true"
+                    />
+                    {group.name}
+                  </p>
                   <p className="text-sm font-semibold text-foreground">
                     {formatMoney(group.amount, currency, locale)}
                   </p>
@@ -197,8 +273,47 @@ export function StatisticsPage() {
               ))}
             </ul>
           </section>
+        </div>
 
-          <section className="rounded-xl border border-border bg-white p-6 shadow-sm">
+        <div className="grid gap-5 lg:grid-cols-5">
+          <section className="rounded-xl border border-border bg-white p-6 shadow-sm lg:col-span-3">
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              {t('Expenses by days')}
+            </h2>
+            <div className="mt-4 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyChartData} margin={{ top: 24, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={12}
+                    tickFormatter={(value: string) => String(Number(value.slice(8)))}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={12}
+                    width={72}
+                    tickFormatter={(value: number) => formatNumberWithSpaceGrouping(value, locale)}
+                  />
+                  <Tooltip
+                    labelFormatter={(label) => formatDate(String(label))}
+                    formatter={(value) => formatMoney(Number(value), currency, locale)}
+                  />
+                  <Bar
+                    dataKey="amount"
+                    fill="#3b82f6"
+                    radius={[3, 3, 0, 0]}
+                    isAnimationActive={false}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-border bg-white p-6 shadow-sm lg:col-span-2">
             <h2 className="font-display text-lg font-semibold text-foreground">
               {t('Top large expenses')}
             </h2>
@@ -209,12 +324,11 @@ export function StatisticsPage() {
                   className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-b-0"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {expense.categoryName}
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {expense.note || t('Expense')}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {formatDate(expense.spentAt)}
-                      {expense.note ? ` · ${expense.note}` : ''}
+                      {formatDate(expense.spentAt)} · {expense.categoryName}
                     </p>
                   </div>
                   <p className="shrink-0 text-sm font-semibold text-foreground">

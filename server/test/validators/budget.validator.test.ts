@@ -23,6 +23,18 @@ describe('budget validators', () => {
     });
   });
 
+  it('limits budget names to 100 characters', () => {
+    const payload = {
+      startDate: '2026-06-01',
+      endDate: '2026-06-30',
+      initialAmount: 10_000,
+      currency: 'RUB',
+    };
+
+    expect(validateCreateBudgetPayload({ ...payload, name: 'a'.repeat(100) }).name).toHaveLength(100);
+    expect(() => validateCreateBudgetPayload({ ...payload, name: 'a'.repeat(101) })).toThrow();
+  });
+
   it.each([
     {
       name: '',

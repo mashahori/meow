@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Coins, Tag } from 'lucide-react';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import type { BudgetCategory } from '../lib/budget-api';
 import { getCategoryGroupName } from '../lib/category-groups';
@@ -62,6 +62,7 @@ export function CategoryFormDialog({
   }
   const { reset: resetForm } = form;
   const { reset: resetMutation } = mutation;
+  const nameLength = useWatch({ control: form.control, name: 'name' }).length;
 
   useEffect(() => {
     if (!open) return;
@@ -103,6 +104,7 @@ export function CategoryFormDialog({
             label={t('Category name')}
             htmlFor="category-name"
             error={form.formState.errors.name?.message}
+            counter={{ length: nameLength, max: 100 }}
           >
             <div className="relative">
               <Tag className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
