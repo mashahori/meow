@@ -15,6 +15,15 @@ describe("category validators", () => {
     ).toEqual({ name: "Groceries", plannedAmount: "26000" });
   });
 
+  it("limits category names to 100 characters", () => {
+    expect(
+      validateCreateCategoryPayload({ name: "a".repeat(100), plannedAmount: "0" }).name,
+    ).toHaveLength(100);
+    expect(() =>
+      validateCreateCategoryPayload({ name: "a".repeat(101), plannedAmount: "0" }),
+    ).toThrow();
+  });
+
   it.each([
     { name: "", plannedAmount: "100" },
     { name: "Groceries", plannedAmount: "-1" },

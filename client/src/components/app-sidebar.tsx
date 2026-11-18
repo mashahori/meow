@@ -1,9 +1,9 @@
-import { Archive, Layers3, LogOut, WalletCards } from 'lucide-react'
-import { useState } from 'react'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/use-auth'
-import { useTranslation } from '../contexts/language-context'
-import { LanguageSwitcher } from './language-switcher'
+import { Archive, ChartNoAxesColumn, Layers3, LogOut, WalletCards } from 'lucide-react';
+import { useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/use-auth';
+import { useTranslation } from '../contexts/language-context';
+import { LanguageSwitcher } from './language-switcher';
 import {
   Sidebar,
   SidebarContent,
@@ -15,29 +15,30 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from './ui/sidebar'
+} from './ui/sidebar';
 
 const navigation = [
   // { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Budgets', url: '/budgets', icon: WalletCards },
   { title: 'Budget archive', url: '/archived-budgets', icon: Archive },
-]
+  { title: 'Statistics', url: '/statistics', icon: ChartNoAxesColumn },
+];
 
 export function AppSidebar() {
-  const { t } = useTranslation()
-  const { user, signOut } = useAuth()
-  const { isMobile, setOpenMobile } = useSidebar()
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [signOutError, setSignOutError] = useState<string | null>(null)
+  const { t } = useTranslation();
+  const { user, signOut } = useAuth();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   async function handleSignOut() {
-    setSignOutError(null)
+    setSignOutError(null);
     try {
-      await signOut()
-      navigate('/login')
+      await signOut();
+      navigate('/login');
     } catch (error) {
-      setSignOutError(error instanceof Error ? t(error.message) : t('Unable to sign out.'))
+      setSignOutError(error instanceof Error ? t(error.message) : t('Unable to sign out.'));
     }
   }
 
@@ -62,7 +63,7 @@ export function AppSidebar() {
                     render={<NavLink to={url} />}
                     tooltip={t(title)}
                     onClick={() => {
-                      if (isMobile) setOpenMobile(false)
+                      if (isMobile) setOpenMobile(false);
                     }}
                   >
                     <Icon />
@@ -82,8 +83,8 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => {
-                if (isMobile) setOpenMobile(false)
-                void handleSignOut()
+                if (isMobile) setOpenMobile(false);
+                void handleSignOut();
               }}
               tooltip={t('Sign out')}
             >
@@ -99,5 +100,5 @@ export function AppSidebar() {
         ) : null}
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

@@ -182,10 +182,10 @@ describe("expense routes", () => {
       expect(insertExpense).not.toHaveBeenCalled();
     });
 
-    it("returns 400 for a note longer than 500 characters", async () => {
+    it("returns 400 for a note longer than 200 characters", async () => {
       const response = await client.post(`/api/budgets/${BUDGET_ID}/expenses`, {
         ...validCreatePayload,
-        note: "a".repeat(501),
+        note: "a".repeat(201),
       });
 
       expect(response.status).toBe(400);

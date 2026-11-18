@@ -67,6 +67,7 @@ export function useSaveExpenseMutation(
           queryClient.invalidateQueries({ queryKey: ['category-expenses', id] }),
         ),
         queryClient.invalidateQueries({ queryKey: ['budget', budgetId] }),
+        queryClient.invalidateQueries({ queryKey: ['statistics'] }),
       ]);
       options?.onSuccess?.();
     },
@@ -86,6 +87,7 @@ export function useDeleteExpenseMutation(
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['category-expenses', categoryId] }),
         queryClient.invalidateQueries({ queryKey: ['budget', budgetId] }),
+        queryClient.invalidateQueries({ queryKey: ['statistics'] }),
       ]);
       options?.onSuccess?.();
     },

@@ -8,19 +8,21 @@ an authenticated REST API backed by PostgreSQL.
 
 🚀 **Demo:** https://meow-budget-mashahori.msk1.amvera.tech/
 
-[![Node.js](https://img.shields.io/badge/Node.js-22.12%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-24.21%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
 ## ✨ Features
 
-- 🔐 Register and sign in with secure session-based authentication.
-- 🔑 Recover forgotten passwords with one-time email reset links.
-- 🗓️ Create and edit budgets with date ranges and currencies.
-- 🗂️ Organize planned amounts into categories.
-- 🧾 Add and manage expenses.
-- 📊 Review planned, spent, and remaining amounts.
+- 🔐 Register, sign in, and sign out with cookie-based sessions stored in PostgreSQL.
+- 🔑 Recover forgotten passwords with one-time email reset links that expire after 30 minutes.
+- 🗓️ Create, edit, and delete budgets with date ranges and currencies.
+- ⭐ Mark one budget as active.
+- 🗃️ Archive and restore budgets, or clone an existing budget.
+- 🗂️ Organize planned amounts into categories and category groups.
+- 🧾 Add, edit, and delete expenses, and view them per budget or per category.
+- 📊 Review planned, spent, and remaining amounts, and check monthly expense statistics.
 - 🌐 Switch the interface between Russian and English; the selected language is saved in the browser.
 - 🗄️ Manage the database schema with PostgreSQL migrations.
 - ☁️ Build and deploy with Docker on Amvera Cloud.
@@ -29,11 +31,12 @@ an authenticated REST API backed by PostgreSQL.
 
 | Area | Technologies |
 | --- | --- |
-| Client | React, TypeScript, Vite, React Router, TanStack Query |
-| Server | Node.js, Express, TypeScript |
-| Database | PostgreSQL |
-| Authentication | Express Session, PostgreSQL session store |
-| Server tests | Jest |
+| Client | React 19, TypeScript, Vite, React Router, TanStack Query, React Hook Form, Zod, Tailwind CSS, shadcn/ui, Recharts |
+| Server | Node.js, Express 5, TypeScript, nodemailer, express-rate-limit |
+| Database | PostgreSQL (`pg`) |
+| Authentication | express-session, connect-pg-simple (PostgreSQL session store), bcryptjs |
+| Tests | Jest (server), Vitest (client) |
+| Code quality | ESLint, Prettier |
 | Deployment | Docker, Amvera Cloud |
 
 ## 🚀 Getting started
@@ -76,6 +79,7 @@ CORS_ORIGIN=http://localhost:5173
 DATABASE_URL=postgresql://postgres:your-password@localhost:5432/budget_planner
 SESSION_SECRET=replace-with-a-random-secret-at-least-32-characters-long
 CLIENT_URL=http://localhost:5173
+MAIL_MOCK=false
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_USER=your-smtp-user
@@ -87,7 +91,8 @@ Replace the database username and password with your own. `SESSION_SECRET`
 must be a unique random value of at least 32 characters. Never commit real
 credentials or secrets to Git. Configure the SMTP values with credentials
 from your email provider to enable password recovery. Reset links expire after
-30 minutes.
+30 minutes. For local development without SMTP, set `MAIL_MOCK=true`: emails are
+not sent and the reset link is printed to the server log instead.
 
 Install dependencies, apply the migrations, and start the server:
 
@@ -129,6 +134,7 @@ npm run format:check
 **Client** (`client`):
 
 ```powershell
+npm test
 npm run compile
 npm run lint
 npm run format:check
@@ -149,14 +155,20 @@ pending database migrations when the container starts.
 3. Set the following application environment variables:
    - `DATABASE_URL` — the PostgreSQL connection string.
    - `SESSION_SECRET` — a unique random secret of at least 32 characters.
+   - `CLIENT_URL` — the public URL of the application, used in password reset links.
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` — the
+     email provider settings required for password recovery. Alternatively, set
+     `MAIL_MOCK=true` to print reset links to the application log instead of
+     sending emails.
 4. Start a build and assign a domain to the application.
 
-The container sets `NODE_ENV=production` and `PORT=3000`. Keep the database as a
+The container sets `NODE_ENV=production` and `PORT=3000`. The client is served by
+the same application, so `CORS_ORIGIN` is not required. Keep the database as a
 separate resource so its data persists across deployments.
 
 ## 📚 Documentation
 
-- [API documentation](server/docs/api.md)
+- [API documentation](server/docs/api.md) (in Russian)
 - [Data model](server/docs/data-model.md)
 - [SQL schema](server/src/db/schema.sql)
 - [Database migrations](server/src/db/migrations)
@@ -164,10 +176,25 @@ separate resource so its data persists across deployments.
 ## 🗂️ Project structure
 
 ```text
-client/                    React client
+client/                    React client (Vite)
+  src/app/                 Router, query client, route-level components
+  src/components/          Shared components and dialogs
+  src/contexts/            Authentication and language contexts
+  src/hooks/               Data-fetching and authentication hooks
+  src/lib/                 API clients, formatting helpers, utilities
+  src/pages/               Application pages
 server/                    Express API
-server/src/db/migrations/  PostgreSQL migrations
-server/docs/               API and data model documentation
+  docs/                    API and data model documentation
+  src/config/              Session configuration
+  src/controllers/         Request handlers
+  src/db/                  Connection pool, schema, migrations, migration runner
+  src/errors/              Application error types
+  src/middleware/          CORS, authentication, ownership checks, rate limiting, error handling
+  src/repositories/        Database queries
+  src/routes/              Express routers
+  src/services/            Business logic
+  src/validators/          Request validation
+  test/                    Jest tests
 ```
 
 ---

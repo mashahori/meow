@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import type { BudgetCategory } from '../lib/budget-api';
 import type { Expense } from '../lib/expense-api';
@@ -22,7 +22,7 @@ function createExpenseFormSchema(t: (text: string) => string) {
       .regex(amountPattern, t('Enter a whole amount'))
       .refine((value) => Number(value) > 0, t('Amount must be greater than zero')),
     spentAt: z.string().date(),
-    note: z.string().trim().max(500, t('Maximum 500 characters')),
+    note: z.string().trim().max(200, t('Maximum 200 characters')),
   });
 }
 
@@ -86,6 +86,7 @@ export function ExpenseFormDialog({
     onSuccess: () => onOpenChange(false),
   });
   const { reset: resetMutation } = mutation;
+  const noteLength = useWatch({ control: form.control, name: 'note' }).length;
 
   // The dialog stays mounted between openings, so each opening must start from the current expense (or empty for a new one).
   useEffect(() => {
@@ -159,11 +160,12 @@ export function ExpenseFormDialog({
             label={t('Note')}
             htmlFor="expense-note"
             error={form.formState.errors.note?.message}
+            counter={{ length: noteLength, max: 200 }}
           >
             <Input
               id="expense-note"
               placeholder={t('What was this expense for?')}
-              maxLength={500}
+              maxLength={200}
               {...form.register('note')}
             />
           </Field>

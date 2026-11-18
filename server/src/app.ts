@@ -11,6 +11,7 @@ import budgetRoutes from "./routes/budget.routes";
 import categoryGroupRoutes from "./routes/category-group.routes";
 import categoryRoutes from "./routes/category.routes";
 import expenseRoutes from "./routes/expense.routes";
+import statisticsRoutes from "./routes/statistics.routes";
 
 export const app: Application = express();
 
@@ -28,6 +29,7 @@ app.use("/api/budgets", budgetRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/category-groups", categoryGroupRoutes);
 app.use("/api/expenses", expenseRoutes);
+app.use("/api/statistics", statisticsRoutes);
 
 const clientBuildPath = path.resolve(__dirname, "../../client/dist");
 const clientIndexPath = path.join(clientBuildPath, "index.html");

@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, CalendarDays, Coins, WalletCards } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import type { Budget } from '../lib/budget-api';
 import { useSaveBudgetMutation } from '../hooks/use-budgets';
@@ -94,6 +94,7 @@ export function BudgetFormDialog({
 
   const { reset: resetForm } = form;
   const { reset: resetMutation } = mutation;
+  const nameLength = useWatch({ control: form.control, name: 'name' }).length;
 
   // Opening can be triggered by the parent (controlled `open`), so the form must be refilled here.
   useEffect(() => {
@@ -145,6 +146,7 @@ export function BudgetFormDialog({
               label={t('Budget name')}
               htmlFor="budget-name"
               error={form.formState.errors.name?.message}
+              counter={{ length: nameLength, max: 100 }}
             >
               <div className="relative">
                 <WalletCards className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />

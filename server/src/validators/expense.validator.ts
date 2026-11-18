@@ -16,7 +16,7 @@ const amountSchema = z
   )
   .refine((value) => Number(value) > 0, 'Amount must be greater than zero');
 
-const noteSchema = z.string().trim().max(500, 'Note must be at most 500 characters');
+const noteSchema = z.string().trim().max(200, 'Note must be at most 200 characters');
 
 const createSchema = z
   .object({
