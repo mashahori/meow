@@ -36,3 +36,30 @@ export async function listMonthlyExpenses(
   );
   return result.rows;
 }
+
+export type MonthlyGroupPlanRow = {
+  currency: MonthlyExpenseRow['currency'];
+  groupSlug: string | null;
+  plannedAmount: string;
+};
+
+// A budget counts towards the month's plan when its period overlaps the month.
+export async function listMonthlyGroupPlans(
+  userId: string,
+  monthStart: string,
+): Promise<MonthlyGroupPlanRow[]> {
+  const result = await pool.query<MonthlyGroupPlanRow>(
+    `SELECT
+       b.currency,
+       c.group_slug AS "groupSlug",
+       SUM(c.planned_amount)::text AS "plannedAmount"
+     FROM categories c
+     JOIN budgets b ON b.id = c.budget_id
+     WHERE b.user_id = $1
+       AND b.start_date < ($2::date + INTERVAL '1 month')
+       AND b.end_date >= $2::date
+     GROUP BY b.currency, c.group_slug`,
+    [userId, monthStart],
+  );
+  return result.rows;
+}

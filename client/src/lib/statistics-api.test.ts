@@ -10,6 +10,7 @@ const response = {
       currency: 'RUB',
       summary: { totalAmount: '84350.00', expenseCount: 2, averagePerDay: '2811.67' },
       groups: [{ slug: null, amount: '84350.00', sharePercent: 100 }],
+      groupPlans: [{ slug: null, plannedAmount: '90000.00', spentAmount: '84350.00' }],
       daily: [{ date: '2026-11-01', amount: '84000.00' }],
       topExpenses: [
         {

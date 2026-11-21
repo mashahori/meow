@@ -1,4 +1,8 @@
-import { listMonthlyExpenses, MonthlyExpenseRow } from '../repositories/statistics.repository';
+import {
+  listMonthlyExpenses,
+  listMonthlyGroupPlans,
+  MonthlyExpenseRow,
+} from '../repositories/statistics.repository';
 
 type Currency = MonthlyExpenseRow['currency'];
 
@@ -15,6 +19,11 @@ type MonthlyStatistics = {
       slug: string | null;
       amount: string;
       sharePercent: number;
+    }[];
+    groupPlans: {
+      slug: string | null;
+      plannedAmount: string;
+      spentAmount: string;
     }[];
     daily: {
       date: string;
@@ -39,8 +48,18 @@ export async function getMonthlyStatistics(
   const monthStart = `${month}-01`;
   const [year, monthNumber] = month.split('-').map(Number);
   const daysInMonth = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
-  const expenses = await listMonthlyExpenses(userId, monthStart);
+  const [expenses, groupPlans] = await Promise.all([
+    listMonthlyExpenses(userId, monthStart),
+    listMonthlyGroupPlans(userId, monthStart),
+  ]);
   const currencyGroups = new Map<Currency, MonthlyExpenseRow[]>();
+  const currencyPlans = new Map<Currency, GroupAmounts>();
+
+  for (const plan of groupPlans) {
+    const plans = currencyPlans.get(plan.currency) ?? new Map<string | null, bigint>();
+    plans.set(plan.groupSlug, toCents(plan.plannedAmount));
+    currencyPlans.set(plan.currency, plans);
+  }
 
   for (const expense of expenses) {
     const currencyExpenses = currencyGroups.get(expense.currency) ?? [];
@@ -53,14 +72,46 @@ export async function getMonthlyStatistics(
     currencies: [...currencyGroups.entries()]
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([currency, currencyExpenses]) =>
-        buildCurrencyStatistics(currency, currencyExpenses, daysInMonth, month),
+        buildCurrencyStatistics(
+          currency,
+          currencyExpenses,
+          currencyPlans.get(currency) ?? new Map<string | null, bigint>(),
+          daysInMonth,
+          month,
+        ),
       ),
   };
+}
+
+type GroupAmounts = Map<string | null, bigint>;
+
+function buildGroupPlans(
+  plans: GroupAmounts,
+  spent: GroupAmounts,
+): MonthlyStatistics['currencies'][number]['groupPlans'] {
+  return [...new Set([...plans.keys(), ...spent.keys()])]
+    .map((slug) => ({ slug, planned: plans.get(slug) ?? 0n, spent: spent.get(slug) ?? 0n }))
+    .filter((group) => group.planned > 0n || group.spent > 0n)
+    .sort((left, right) => {
+      if (left.planned !== right.planned) {
+        return left.planned > right.planned ? -1 : 1;
+      }
+      if (left.spent !== right.spent) {
+        return left.spent > right.spent ? -1 : 1;
+      }
+      return (left.slug ?? 'other').localeCompare(right.slug ?? 'other');
+    })
+    .map((group) => ({
+      slug: group.slug,
+      plannedAmount: formatCents(group.planned),
+      spentAmount: formatCents(group.spent),
+    }));
 }
 
 function buildCurrencyStatistics(
   currency: Currency,
   expenses: MonthlyExpenseRow[],
+  plans: GroupAmounts,
   daysInMonth: number,
   month: string,
 ): MonthlyStatistics['currencies'][number] {
@@ -101,6 +152,7 @@ function buildCurrencyStatistics(
         amount: formatCents(amount),
         sharePercent: total === 0n ? 0 : Number((amount * 1000n + total / 2n) / total) / 10,
       })),
+    groupPlans: buildGroupPlans(plans, groupTotals),
     daily: Array.from({ length: daysInMonth }, (_, index) => {
       const date = `${month}-${String(index + 1).padStart(2, '0')}`;
       return { date, amount: formatCents(dailyTotals.get(date) ?? 0n) };

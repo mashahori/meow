@@ -18,6 +18,13 @@ const statisticsSchema = z.object({
           sharePercent: z.number(),
         }),
       ),
+      groupPlans: z.array(
+        z.object({
+          slug: z.string().nullable(),
+          plannedAmount: z.string(),
+          spentAmount: z.string(),
+        }),
+      ),
       daily: z.array(
         z.object({
           date: z.string().date(),

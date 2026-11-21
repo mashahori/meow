@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, CalendarDays, Coins, WalletCards } from 'lucide-react';
+import { ArrowRight, Coins, WalletCards } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import type { Budget } from '../lib/budget-api';
 import { useSaveBudgetMutation } from '../hooks/use-budgets';
 import { Button } from './ui/button';
+import { DatePickerField } from './date-picker-field';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Field } from './ui/field';
 import { Input } from './ui/input';
@@ -161,36 +162,32 @@ export function BudgetFormDialog({
             </Field>
 
             <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
-              <Field
-                label={t('Start date')}
-                htmlFor="budget-start-date"
-                error={form.formState.errors.startDate?.message}
-              >
-                <div className="relative">
-                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
-                  <Input
+              <Controller
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <DatePickerField
                     id="budget-start-date"
-                    className="block max-w-full appearance-none pl-11"
-                    type="date"
-                    {...form.register('startDate')}
+                    label={t('Start date')}
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={form.formState.errors.startDate?.message}
                   />
-                </div>
-              </Field>
-              <Field
-                label={t('End date')}
-                htmlFor="budget-end-date"
-                error={form.formState.errors.endDate?.message}
-              >
-                <div className="relative">
-                  <CalendarDays className="absolute left-4 top-3.5 size-[18px] text-muted-foreground" />
-                  <Input
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <DatePickerField
                     id="budget-end-date"
-                    className="block max-w-full appearance-none pl-11"
-                    type="date"
-                    {...form.register('endDate')}
+                    label={t('End date')}
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={form.formState.errors.endDate?.message}
                   />
-                </div>
-              </Field>
+                )}
+              />
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-[1fr_0.8fr]">
