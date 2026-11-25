@@ -41,6 +41,10 @@ function formatMoney(amount: string | number, currency: string, locale: string) 
 
 const CHART_COLORS = ['#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#14b8a6', '#ec4899', '#94a3b8'];
 
+const PLAN_COLOR = '#cbd5e1';
+const ACTUAL_COLOR = '#3b82f6';
+const OVER_PLAN_COLOR = '#ef4444';
+
 function StatCard({
   icon: Icon,
   label,
@@ -68,9 +72,12 @@ function StatCard({
 
 export function StatisticsPage() {
   const { t, locale } = useTranslation();
-  const [month, setMonth] = useState(getCurrentMonth);
+  const currentMonth = getCurrentMonth();
+  const [month, setMonth] = useState(currentMonth);
   const [selectedCurrency, setSelectedCurrency] = useState<string>();
   const statisticsQuery = useStatisticsQuery(month);
+  // "YYYY-MM" strings sort chronologically, so this compares months directly.
+  const isNextMonthDisabled = month >= currentMonth;
   const currencies = statisticsQuery.data?.currencies ?? [];
   const stats: CurrencyStatistics | undefined =
     currencies.find((item) => item.currency === selectedCurrency) ?? currencies[0];
@@ -92,6 +99,7 @@ export function StatisticsPage() {
         variant="ghost"
         size="icon-sm"
         aria-label={t('Next month')}
+        disabled={isNextMonthDisabled}
         onClick={() => setMonth((current) => shiftMonth(current, 1))}
       >
         <ChevronRight aria-hidden="true" />
@@ -141,6 +149,12 @@ export function StatisticsPage() {
       amount: group.amount,
       percent: group.sharePercent,
       color: CHART_COLORS[index % CHART_COLORS.length],
+    }));
+    const planChartData = stats.groupPlans.map((group) => ({
+      key: group.slug ?? 'other',
+      name: group.slug ? t(getCategoryGroupName(group.slug)) : t('Other'),
+      planned: Number(group.plannedAmount),
+      spent: Number(group.spentAmount),
     }));
     const dailyChartData = stats.daily.map((day) => ({
       date: day.date,
@@ -339,6 +353,79 @@ export function StatisticsPage() {
             </ul>
           </section>
         </div>
+
+        <section className="rounded-xl border border-border bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              {t('Plan and actual by groups')}
+            </h2>
+            <ul className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+              {[
+                { label: t('Plan'), color: PLAN_COLOR },
+                { label: t('Actual'), color: ACTUAL_COLOR },
+                { label: t('Over plan'), color: OVER_PLAN_COLOR },
+              ].map((item) => (
+                <li key={item.label} className="flex items-center gap-2">
+                  <span
+                    className="size-2.5 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                    aria-hidden="true"
+                  />
+                  {item.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="mt-4" style={{ height: planChartData.length * 48 + 40 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={planChartData}
+                layout="vertical"
+                barGap={2}
+                margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid horizontal={false} stroke="#e5e7eb" />
+                <XAxis
+                  type="number"
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={12}
+                  tickFormatter={(value: number) => formatNumberWithSpaceGrouping(value, locale)}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={12}
+                  width={132}
+                />
+                <Tooltip formatter={(value) => formatMoney(Number(value), currency, locale)} />
+                <Bar
+                  dataKey="planned"
+                  name={t('Plan')}
+                  fill={PLAN_COLOR}
+                  radius={[0, 3, 3, 0]}
+                  isAnimationActive={false}
+                />
+                <Bar
+                  dataKey="spent"
+                  name={t('Actual')}
+                  fill={ACTUAL_COLOR}
+                  radius={[0, 3, 3, 0]}
+                  isAnimationActive={false}
+                >
+                  {planChartData.map((group) => (
+                    <Cell
+                      key={group.key}
+                      fill={group.spent > group.planned ? OVER_PLAN_COLOR : ACTUAL_COLOR}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
       </div>
     );
   }

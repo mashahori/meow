@@ -238,6 +238,11 @@ const russianTranslations: Record<string, string> = {
   Other: 'Прочее',
   'Share of expenses': 'Доля в расходах',
   'Expenses by days': 'Расходы по дням',
+  'Plan and actual by groups': 'План и факт по группам',
+  Plan: 'План',
+  Actual: 'Факт',
+  'Over plan': 'Сверх плана',
+  'Select a date': 'Выберите дату',
   total: 'всего',
 };
 

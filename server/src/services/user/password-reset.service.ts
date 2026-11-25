@@ -37,16 +37,21 @@ export async function requestPasswordReset(email: string): Promise<void> {
     return;
   }
 
-  await mailTransport!.sendMail({
-    from: requiredEnvironmentVariable("SMTP_FROM"),
-    to: user.email,
-    subject: "Reset your password",
-    text: [
-      "We received a request to reset your password.",
-      `Use this link within 30 minutes: ${resetUrl.toString()}`,
-      "If you did not request a password reset, you can ignore this email.",
-    ].join("\n\n"),
-  });
+  try {
+    await mailTransport!.sendMail({
+      from: requiredEnvironmentVariable("SMTP_FROM"),
+      to: user.email,
+      subject: "Reset your password",
+      text: [
+        "We received a request to reset your password.",
+        `Use this link within 30 minutes: ${resetUrl.toString()}`,
+        "If you did not request a password reset, you can ignore this email.",
+      ].join("\n\n"),
+    });
+  } catch (error) {
+    // Swallowed so the response does not reveal whether the account exists.
+    console.error("Failed to send password reset email", error);
+  }
 }
 
 export async function resetPassword(

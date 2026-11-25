@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import type { BudgetCategory } from '../lib/budget-api';
 import type { Expense } from '../lib/expense-api';
 import { useSaveExpenseMutation } from '../hooks/use-expenses';
 import { Button } from './ui/button';
+import { DatePickerField } from './date-picker-field';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { Field } from './ui/field';
 import { Input } from './ui/input';
@@ -169,20 +170,21 @@ export function ExpenseFormDialog({
               {...form.register('note')}
             />
           </Field>
-          <Field
-            label={t('Date')}
-            htmlFor="expense-date"
-            error={form.formState.errors.spentAt?.message}
-          >
-            <Input
-              id="expense-date"
-              type="date"
-              min={startDate}
-              max={endDate}
-              className="block max-w-full appearance-none"
-              {...form.register('spentAt')}
-            />
-          </Field>
+          <Controller
+            control={form.control}
+            name="spentAt"
+            render={({ field }) => (
+              <DatePickerField
+                id="expense-date"
+                label={t('Date')}
+                value={field.value}
+                onChange={field.onChange}
+                error={form.formState.errors.spentAt?.message}
+                min={startDate}
+                max={endDate}
+              />
+            )}
+          />
           {mutation.isError ? (
             <p role="alert" className="text-sm font-medium text-destructive">
               {mutation.error instanceof Error

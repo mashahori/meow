@@ -100,11 +100,13 @@ export function PasswordResetPage({ mode }: PasswordResetPageProps) {
           <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-foreground">
             {t(isRequest ? 'Forgot your password?' : 'Choose a new password')}
           </h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            {isRequest
-              ? t('Enter your account email and we will send you a password reset link.')
-              : t('Your new password must be at least 8 characters long.')}
-          </p>
+          {isComplete ? null : (
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              {isRequest
+                ? t('Enter your account email and we will send you a password reset link.')
+                : t('Your new password must be at least 8 characters long.')}
+            </p>
+          )}
         </div>
 
         {isComplete ? (

@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { listMonthlyExpenses } from '../../src/repositories/statistics.repository';
+import {
+  listMonthlyExpenses,
+  listMonthlyGroupPlans,
+} from '../../src/repositories/statistics.repository';
 import { setupTestServer, signIn, TEST_USER_ID, TestClient } from './route-helpers';
 
 jest.mock('../../src/config/session', () => {
@@ -27,6 +30,57 @@ describe('statistics routes', () => {
   beforeEach(async () => {
     client = newClient();
     await signIn(client);
+    jest.mocked(listMonthlyGroupPlans).mockResolvedValue([]);
+  });
+
+  it('compares planned and spent amounts by group', async () => {
+    jest.mocked(listMonthlyExpenses).mockResolvedValue([
+      {
+        id: EXPENSE_ID,
+        amount: '1500',
+        spentAt: '2026-11-03',
+        currency: 'RUB',
+        categoryId: CATEGORY_ID,
+        categoryName: 'Продукты',
+        groupSlug: 'food',
+        note: null,
+      },
+      {
+        id: 'c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f',
+        amount: '200',
+        spentAt: '2026-11-04',
+        currency: 'RUB',
+        categoryId: CATEGORY_ID,
+        categoryName: 'Разное',
+        groupSlug: null,
+        note: null,
+      },
+    ]);
+    jest.mocked(listMonthlyGroupPlans).mockResolvedValue([
+      { currency: 'RUB', groupSlug: 'food', plannedAmount: '1000' },
+      { currency: 'RUB', groupSlug: 'transport', plannedAmount: '3000' },
+      { currency: 'RUB', groupSlug: 'sport', plannedAmount: '0' },
+      { currency: 'USD', groupSlug: 'travel', plannedAmount: '500' },
+      { currency: 'EUR', groupSlug: 'travel', plannedAmount: '0' },
+    ]);
+
+    const response = await client.get('/api/statistics?month=2026-11');
+
+    expect(response.status).toBe(200);
+    const { currencies } = response.body as { currencies: Record<string, unknown>[] };
+    expect(currencies.map((item) => item.currency)).toEqual(['RUB', 'USD']);
+    expect(currencies[0].groupPlans).toEqual([
+      { slug: 'transport', plannedAmount: '3000.00', spentAmount: '0.00' },
+      { slug: 'food', plannedAmount: '1000.00', spentAmount: '1500.00' },
+      { slug: null, plannedAmount: '0.00', spentAmount: '200.00' },
+    ]);
+    expect(currencies[1]).toMatchObject({
+      summary: { totalAmount: '0.00', expenseCount: 0, averagePerDay: '0.00' },
+      groups: [],
+      groupPlans: [{ slug: 'travel', plannedAmount: '500.00', spentAmount: '0.00' }],
+      topExpenses: [],
+    });
+    expect(listMonthlyGroupPlans).toHaveBeenCalledWith(TEST_USER_ID, '2026-11-01');
   });
 
   it('returns monthly totals and breakdowns by currency', async () => {
@@ -77,6 +131,7 @@ describe('statistics routes', () => {
             averagePerDay: '2811.67',
           },
           groups: [{ slug: 'rent', amount: '84350.00', sharePercent: 100 }],
+          groupPlans: [{ slug: 'rent', plannedAmount: '0.00', spentAmount: '84350.00' }],
           daily: expect.arrayContaining([
             { date: '2026-11-01', amount: '84000.00' },
             { date: '2026-11-30', amount: '350.00' },
@@ -110,6 +165,7 @@ describe('statistics routes', () => {
             averagePerDay: '0.33',
           },
           groups: [{ slug: 'transport', amount: '10.00', sharePercent: 100 }],
+          groupPlans: [{ slug: 'transport', plannedAmount: '0.00', spentAmount: '10.00' }],
           daily: expect.any(Array),
           topExpenses: [
             {
