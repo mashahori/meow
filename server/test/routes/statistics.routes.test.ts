@@ -61,18 +61,25 @@ describe('statistics routes', () => {
       { currency: 'RUB', groupSlug: 'transport', plannedAmount: '3000' },
       { currency: 'RUB', groupSlug: 'sport', plannedAmount: '0' },
       { currency: 'USD', groupSlug: 'travel', plannedAmount: '500' },
+      { currency: 'EUR', groupSlug: 'travel', plannedAmount: '0' },
     ]);
 
     const response = await client.get('/api/statistics?month=2026-11');
 
     expect(response.status).toBe(200);
     const { currencies } = response.body as { currencies: Record<string, unknown>[] };
-    expect(currencies).toHaveLength(1);
+    expect(currencies.map((item) => item.currency)).toEqual(['RUB', 'USD']);
     expect(currencies[0].groupPlans).toEqual([
       { slug: 'transport', plannedAmount: '3000.00', spentAmount: '0.00' },
       { slug: 'food', plannedAmount: '1000.00', spentAmount: '1500.00' },
       { slug: null, plannedAmount: '0.00', spentAmount: '200.00' },
     ]);
+    expect(currencies[1]).toMatchObject({
+      summary: { totalAmount: '0.00', expenseCount: 0, averagePerDay: '0.00' },
+      groups: [],
+      groupPlans: [{ slug: 'travel', plannedAmount: '500.00', spentAmount: '0.00' }],
+      topExpenses: [],
+    });
     expect(listMonthlyGroupPlans).toHaveBeenCalledWith(TEST_USER_ID, '2026-11-01');
   });
 

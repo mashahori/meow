@@ -67,6 +67,13 @@ export async function getMonthlyStatistics(
     currencyGroups.set(expense.currency, currencyExpenses);
   }
 
+  for (const [currency, plans] of currencyPlans) {
+    const hasPlan = [...plans.values()].some((amount) => amount > 0n);
+    if (hasPlan && !currencyGroups.has(currency)) {
+      currencyGroups.set(currency, []);
+    }
+  }
+
   return {
     month,
     currencies: [...currencyGroups.entries()]

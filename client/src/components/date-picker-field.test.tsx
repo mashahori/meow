@@ -3,12 +3,18 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DatePickerField } from './date-picker-field';
 
-function renderField(onChange = vi.fn()) {
+const translation = vi.hoisted(() => ({ language: 'en' }));
+
+vi.mock('../contexts/language-context', () => ({
+  useTranslation: () => ({ t: (text: string) => text, language: translation.language }),
+}));
+
+function renderField(onChange = vi.fn(), value = '2026-11-05') {
   render(
     <DatePickerField
       id="test-date"
       label="Date"
-      value="2026-11-05"
+      value={value}
       onChange={onChange}
       min="2026-11-02"
       max="2026-11-20"
@@ -20,6 +26,7 @@ function renderField(onChange = vi.fn()) {
 describe('DatePickerField', () => {
   afterEach(() => {
     cleanup();
+    translation.language = 'en';
   });
 
   it('shows the value as DD.MM.YYYY and reports the picked day as an ISO date', async () => {
@@ -43,5 +50,28 @@ describe('DatePickerField', () => {
 
     expect(dayBeforeMin.hasAttribute('disabled')).toBe(true);
     expect(dayAfterMax.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('localizes the calendar for Russian and starts weeks on Monday', async () => {
+    translation.language = 'ru';
+    renderField();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Date' }));
+
+    expect(await screen.findByText(/ноябрь 2026/i)).toBeTruthy();
+    const weekdays = [...document.querySelectorAll('.rdp-weekday')].map((cell) => cell.textContent);
+    expect(weekdays[0]).toMatch(/^пн/i);
+  });
+
+  it('shows a placeholder instead of an invalid date when the value is empty', async () => {
+    const onChange = renderField(vi.fn(), '');
+
+    const trigger = screen.getByRole('button', { name: 'Date' });
+    expect(trigger.textContent).toContain('Select a date');
+
+    fireEvent.click(trigger);
+    fireEvent.click(await screen.findByRole('button', { name: /November 12(?!\d)/ }));
+
+    expect(onChange).toHaveBeenCalledWith('2026-11-12');
   });
 });

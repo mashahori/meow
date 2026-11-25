@@ -242,6 +242,7 @@ const russianTranslations: Record<string, string> = {
   Plan: 'План',
   Actual: 'Факт',
   'Over plan': 'Сверх плана',
+  'Select a date': 'Выберите дату',
   total: 'всего',
 };
 

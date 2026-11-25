@@ -22,10 +22,14 @@ vi.mock('../hooks/use-budgets', () => ({
 describe('BudgetFormDialog date picker', () => {
   beforeEach(() => {
     mutate.mockReset();
+    // The form defaults to the current month, so pin "today" to keep the test date-independent.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 15));
   });
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   it('submits the start date picked in the calendar as an ISO date', async () => {

@@ -1,6 +1,8 @@
-import { format, parseISO } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
+import { enUS, ru } from 'date-fns/locale';
 import { CalendarDays } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from '../contexts/language-context';
 import { formatDate } from '../lib/date-format';
 import { Calendar } from './ui/calendar';
 import { Field } from './ui/field';
@@ -17,6 +19,12 @@ type DatePickerFieldProps = {
   max?: string;
 };
 
+function parseIsoDate(value: string | undefined): Date | undefined {
+  if (!value) return undefined;
+  const date = parseISO(value);
+  return isValid(date) ? date : undefined;
+}
+
 export function DatePickerField({
   id,
   label,
@@ -26,11 +34,14 @@ export function DatePickerField({
   min,
   max,
 }: DatePickerFieldProps) {
+  const { t, language } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const selected = parseISO(value);
+  const selected = parseIsoDate(value);
+  const minDate = parseIsoDate(min);
+  const maxDate = parseIsoDate(max);
   const disabledDays = [
-    ...(min ? [{ before: parseISO(min) }] : []),
-    ...(max ? [{ after: parseISO(max) }] : []),
+    ...(minDate ? [{ before: minDate }] : []),
+    ...(maxDate ? [{ after: maxDate }] : []),
   ];
 
   return (
@@ -42,15 +53,21 @@ export function DatePickerField({
           className="flex h-12 w-full items-center gap-2 rounded-xl border border-input bg-transparent px-4 text-left text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-[#d1242f] aria-invalid:bg-[#ffebe9]"
         >
           <CalendarDays className="size-[18px] shrink-0 text-muted-foreground" aria-hidden="true" />
-          {formatDate(value)}
+          {selected ? (
+            formatDate(value)
+          ) : (
+            <span className="text-muted-foreground">{t('Select a date')}</span>
+          )}
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="single"
+            locale={language === 'ru' ? ru : enUS}
+            weekStartsOn={1}
             selected={selected}
-            defaultMonth={selected}
-            startMonth={min ? parseISO(min) : undefined}
-            endMonth={max ? parseISO(max) : undefined}
+            defaultMonth={selected ?? minDate}
+            startMonth={minDate}
+            endMonth={maxDate}
             disabled={disabledDays}
             onSelect={(date) => {
               if (!date) return;

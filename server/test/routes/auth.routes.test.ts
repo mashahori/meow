@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { createHash } from "node:crypto";
 import {
   findUserById,
@@ -172,13 +172,25 @@ describe("auth routes", () => {
     });
 
     describe("when mail is not mocked", () => {
+      const originalEnv = process.env;
+      let consoleError: ReturnType<typeof jest.spyOn> | undefined;
+
       beforeEach(() => {
-        process.env.MAIL_MOCK = "false";
-        process.env.SMTP_HOST = "smtp.example.com";
-        process.env.SMTP_PORT = "587";
-        process.env.SMTP_USER = "user";
-        process.env.SMTP_PASSWORD = "pass";
-        process.env.SMTP_FROM = "Budget Planner <from@example.com>";
+        process.env = {
+          ...originalEnv,
+          MAIL_MOCK: "false",
+          SMTP_HOST: "smtp.example.com",
+          SMTP_PORT: "587",
+          SMTP_USER: "user",
+          SMTP_PASSWORD: "pass",
+          SMTP_FROM: "Budget Planner <from@example.com>",
+        };
+      });
+
+      afterEach(() => {
+        process.env = originalEnv;
+        consoleError?.mockRestore();
+        consoleError = undefined;
       });
 
       it("emails the reset link to a known user", async () => {
@@ -198,7 +210,7 @@ describe("auth routes", () => {
       });
 
       it("returns the same generic message when sending fails for a known user", async () => {
-        const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+        consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
         jest.mocked(findUserByEmail).mockResolvedValue(TEST_USER);
         mockSendMail.mockRejectedValue(new Error("SMTP unavailable"));
 
@@ -209,7 +221,6 @@ describe("auth routes", () => {
           message: "If an account with that email exists, a reset link has been sent.",
         });
         expect(consoleError).toHaveBeenCalled();
-        consoleError.mockRestore();
       });
     });
 
