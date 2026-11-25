@@ -36,6 +36,12 @@ jest.mock("../../src/middleware/password-reset-limiter", () => ({
 
 jest.mock("../../src/repositories/user.repository");
 
+const mockSendMail = jest.fn<(message: unknown) => Promise<unknown>>();
+jest.mock("nodemailer", () => ({
+  __esModule: true,
+  default: { createTransport: () => ({ sendMail: mockSendMail }) },
+}));
+
 const RESET_TOKEN = "a".repeat(43);
 
 function sha256(value: string): string {
@@ -163,6 +169,48 @@ describe("auth routes", () => {
         message: "If an account with that email exists, a reset link has been sent.",
       });
       expect(savePasswordResetToken).not.toHaveBeenCalled();
+    });
+
+    describe("when mail is not mocked", () => {
+      beforeEach(() => {
+        process.env.MAIL_MOCK = "false";
+        process.env.SMTP_HOST = "smtp.example.com";
+        process.env.SMTP_PORT = "587";
+        process.env.SMTP_USER = "user";
+        process.env.SMTP_PASSWORD = "pass";
+        process.env.SMTP_FROM = "Budget Planner <from@example.com>";
+      });
+
+      it("emails the reset link to a known user", async () => {
+        jest.mocked(findUserByEmail).mockResolvedValue(TEST_USER);
+        mockSendMail.mockResolvedValue({ messageId: "id" });
+
+        const response = await client.post("/api/auth/forgot-password", { email: TEST_EMAIL });
+
+        expect(response.status).toBe(200);
+        expect(mockSendMail).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: TEST_EMAIL,
+            from: "Budget Planner <from@example.com>",
+            text: expect.stringMatching(/http:\/\/localhost:5173\/reset-password\?token=/),
+          }),
+        );
+      });
+
+      it("returns the same generic message when sending fails for a known user", async () => {
+        const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+        jest.mocked(findUserByEmail).mockResolvedValue(TEST_USER);
+        mockSendMail.mockRejectedValue(new Error("SMTP unavailable"));
+
+        const response = await client.post("/api/auth/forgot-password", { email: TEST_EMAIL });
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({
+          message: "If an account with that email exists, a reset link has been sent.",
+        });
+        expect(consoleError).toHaveBeenCalled();
+        consoleError.mockRestore();
+      });
     });
 
     it("stores a hashed token and logs a reset link for a known email", async () => {
